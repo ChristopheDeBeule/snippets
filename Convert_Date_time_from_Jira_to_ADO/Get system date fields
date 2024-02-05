@@ -1,0 +1,2 @@
+// This will get the workitem fields
+https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.1-preview.3

@@ -1,0 +1,1 @@
+replica.issueLinks = issue.issueLinks

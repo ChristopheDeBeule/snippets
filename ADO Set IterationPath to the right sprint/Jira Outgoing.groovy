@@ -1,0 +1,1 @@
+replica.customFields."Sprint" = issue.customFields."Sprint"

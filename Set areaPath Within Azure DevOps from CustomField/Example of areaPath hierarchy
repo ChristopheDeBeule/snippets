@@ -1,0 +1,85 @@
+"value": [
+{
+"id": 4,
+"identifier": "367deb80-7bc8-4e66-9029-034af53823e4",
+"name": "Christophe",
+"structureType": "area",
+"hasChildren": true,
+"children": [
+{
+"id": 18,
+"identifier": "8a2bd6bd-7ab3-4e3c-abb0-e6c882072325",
+"name": "Exalate",
+"structureType": "area",
+"hasChildren": true,
+"children": [
+{
+"id": 19,
+"identifier": "d9e37bf8-9864-400d-b395-cc6b38d27b92",
+"name": "Exa 1",
+"structureType": "area",
+"hasChildren": false,
+"path": "\\Christophe\\Area\\Exalate\\Exa 1",
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas/Exalate/Exa%201"
+},
+{
+"id": 20,
+"identifier": "e151d264-b935-4e9c-a33a-d46f4765f6ac",
+"name": "Exa 2",
+"structureType": "area",
+"hasChildren": false,
+"path": "\\Christophe\\Area\\Exalate\\Exa 2",
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas/Exalate/Exa%202"
+},
+{
+"id": 24,
+"identifier": "d4bc2849-cc5c-4087-bd0b-533eac615340",
+"name": "Exa 3",
+"structureType": "area",
+"hasChildren": false,
+"path": "\\Christophe\\Area\\Exalate\\Exa 3",
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas/Exalate/Exa%203"
+}
+],
+"path": "\\Christophe\\Area\\Exalate",
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas/Exalate"
+},
+{
+"id": 21,
+"identifier": "b56ecc78-e39b-4e50-a3d4-710d3332b6d7",
+"name": "Testing 2",
+"structureType": "area",
+"hasChildren": true,
+"children": [
+{
+"id": 22,
+"identifier": "18bcf131-c18b-4cf6-a51e-dca009d66580",
+"name": "Test 1",
+"structureType": "area",
+"hasChildren": false,
+"path": "\\Christophe\\Area\\Testing 2\\Test 1",
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas/Testing%202/Test%201"
+},
+{
+"id": 23,
+"identifier": "873333ed-6386-4ab6-9b66-713c0a4fdc1f",
+"name": "Test 2",
+"structureType": "area",
+"hasChildren": false,
+"path": "\\Christophe\\Area\\Testing 2\\Test 2",
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas/Testing%202/Test%202"
+}
+],
+"path": "\\Christophe\\Area\\Testing 2",
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas/Testing%202"
+}
+],
+"path": "\\Christophe\\Area",
+"_links": {
+"self": {
+"href": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas"
+}
+},
+"url": "https://dev.azure.com/christophedebeule/098a6c7c-89d9-46d5-8504-27baf4f495ce/_apis/wit/classificationNodes/Areas"
+}
+]

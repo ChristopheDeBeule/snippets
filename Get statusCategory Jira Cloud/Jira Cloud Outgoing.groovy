@@ -1,0 +1,1 @@
+def statusCategory = httpClient.get("/rest/api/3/issue/${issue.key}").fields?.status?.statusCategory?.name
