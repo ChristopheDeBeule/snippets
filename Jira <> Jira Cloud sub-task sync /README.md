@@ -11,11 +11,11 @@ We use the rest API to see if a newsub-task is created in a already synced issue
 
 #### [Jira onPrem](https://docs.exalate.com/docs/how-to-sync-tasks-and-subtasks-in-jira-on-premise)
 
-In Jira onPrem this needs a bit more off attention.
+In Jira onPrem this needs a bit more attention.
 
 Even if you create an ordinary [trigger](https://docs.exalate.com/docs/triggers-in-exalate) when a new sub-task is created it could be that the parentId field is not updated on the sub-task.
 
-Meaning the sub-task will be created on the remote site but it will be created as a Task or other issue typ (depending what your default issue Type is).
+Meaning the sub-task will be created on the remote site but it will be created as a Task or other issue type (depending what your default issue Type is).
 
 So we have to delay this process, the way you can do this is as follows.
 
