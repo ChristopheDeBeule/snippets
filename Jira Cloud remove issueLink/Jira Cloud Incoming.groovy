@@ -28,7 +28,7 @@ def toDelete = []
 // We loop over the replica issueLinks and resolve all links to a local issue key
 
 def issueLinks = []
-if ((replica.issueLinks.isEmpty()) && (!previous.issueLinks.isEmpty())){
+if ((!firstSync && replica.issueLinks.isEmpty()) && (!previous.issueLinks.isEmpty())){
     issueLinks = previous.issueLinks
 }else{
     issueLinks = replica.issueLinks
