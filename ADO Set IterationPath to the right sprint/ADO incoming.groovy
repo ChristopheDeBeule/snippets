@@ -25,14 +25,26 @@ def getAreaPathValuesADO(def projectName){
 def tmp = []
 getAreaPathValuesADO(projectName)?.children.each{ i -> tmp += i?.name}
 
+def replaceAndRemoveSpecialChars(String input) {
+    // Replace & with "and"
+    String replacedString = input.replaceAll("&", "and")
+    
+    // Define a string containing all special characters to be replaced, excluding &
+    // since it's already been replaced with "and"
+    String specialChars = '#\\$%\\*\\+\\|:"\\?/\\\\><'
+    
+    // Use replaceAll to remove the special characters. Since some characters have special meaning in a regex pattern,
+    // they need to be escaped with double backslashes. In Groovy strings, a single backslash is used to escape characters,
+    // so you see quadruple backslashes for the regex pattern.
+    return replacedString.replaceAll("[$specialChars]", "")
+}
+
 def addSprintToIteration(def sprint, def projectName){
-    // Get Area Block Start
     def adoClient = new AdoClient(httpClient, nodeHelper, debug)
     def sprintStartDate = sprint?.startDate.toString().replace(" ","T")
     def sprintendDate = sprint?.endDate.toString().replace(" ","T") 
-    def sprintName = sprint?.name?.toString()
-
-    def time = "2017-04-24T00:00:00Z"
+    def sprintName = replaceAndRemoveSpecialChars(sprint?.name?.toString())
+    
     adoClient
         .http (
             "POST",
@@ -48,16 +60,18 @@ def addSprintToIteration(def sprint, def projectName){
                     (new groovy.json.JsonSlurper()).parseText(res.body)
                 }
             }
-
-    // Get Area Block End
 }
+
 // here we check if the sprint is not null and that tmp (all iteration paths) does not exsists already.
 // we create a new iteration path if the sprint does not exsists already
 def sprint = replica.customFields."Sprint".value[0]
 
-if(sprint?.name != null && !tmp.contains(sprint?.name?.toString())){
+
+def checkedSprintName = replaceAndRemoveSpecialChars("${sprint?.name?.toString()}")
+//debug.error()
+if(sprint?.name != null && !tmp.contains(checkedSprintName)){
     addSprintToIteration(sprint, projectName)
-    workItem.iterationPath = "${projectName}\\${sprint?.name?.toString()}"
-}else if (sprint?.name != null && tmp.contains(sprint?.name?.toString())){
-    workItem.iterationPath = "${projectName}\\${sprint?.name?.toString()}"
+    workItem.iterationPath = "${projectName}\\${checkedSprintName}"
+}else if (sprint?.name != null && tmp.contains(checkedSprintName)){
+    workItem.iterationPath = "${projectName}\\${checkedSprintName}"
 }
