@@ -27,6 +27,3 @@ You can create a new ticket in your instance that is connected to your Jira clou
 When the issue-key is added in your field the trigger will pick it up and send ot over to your Jira cloud instance and it will be connected.
 
 you can add as many tickets you want, but notice that every update you do on the Jira ticket will be visible on your local issue (only fields you sync back from Jira to your local issue).
-
-
-You can find a video [here](./Multi_ZD_to_One_Jira_Issue.mov) where I showcase this with Zendesk and Jira Cloud.
