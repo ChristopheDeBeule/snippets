@@ -3,7 +3,7 @@
 // Ado Client Class End
 
 // Create iteration depending on sprint
-// This functions gets every iteration path in your project and returns them
+// We make sure the project name is found
 def encode(String projectKey) {
     if (!projectKey) {
         return projectKey
@@ -14,16 +14,28 @@ def encode(String projectKey) {
 def projectName = encode(workItem.project?.key) ?: encode(workItem.projectKey)
 projectName = projectName.replace("+", "%20") // Name with spaces contains '+' char
 
+// This function gets every iteration path in your project and returns them
 def getAreaPathValuesADO(def projectName){
     // get the area and iteration values
     def existingArea = httpClient.get("/${projectName}/_apis/wit/classificationnodes?\$depth=2&api-version=5.0-preview.2",true)
-    // this return only the iteratio values
+    // this return only the iteration path values
     return existingArea.value[1]; // 1 is for the iteration path 0 is for the area path
 }
 
 // we search in the iteration children (the values under the project name), we add those names in the tmp list
 def tmp = []
 getAreaPathValuesADO(projectName)?.children.each{ i -> tmp += i?.name}
+
+
+def shortPost(def sprint, def projectName){
+    def sprintStartDate = sprint?.startDate.toString().replace(" ","T")
+    def sprintendDate = sprint?.endDate.toString().replace(" ","T") 
+    def sprintName = sprint?.name?.toString()
+
+    def url = "/${projectName}/_apis/wit/classificationnodes/Iterations".toString()
+    def body =  "{\"name\": \"${sprintName}\",\"attributes\": {\"startDate\": \"${sprintStartDate}\",\"finishDate\": \"${sprintendDate}\"}}"
+    httpClient.post(url, body)
+}
 
 def replaceAndRemoveSpecialChars(String input) {
     // Replace & with "and"
@@ -44,7 +56,7 @@ def addSprintToIteration(def sprint, def projectName){
     def sprintStartDate = sprint?.startDate.toString().replace(" ","T")
     def sprintendDate = sprint?.endDate.toString().replace(" ","T") 
     def sprintName = replaceAndRemoveSpecialChars(sprint?.name?.toString())
-    
+
     adoClient
         .http (
             "POST",
@@ -62,16 +74,18 @@ def addSprintToIteration(def sprint, def projectName){
             }
 }
 
+def sprint = replica.customFields."Sprint".value[0]
+// we remove any special characters that ADO does not allow in the iteration path
+def checkedSprintName = replaceAndRemoveSpecialChars("${sprint?.name?.toString()}")
+def projectNameWithApace = projectName
+// we will remove the %20 to a space cause the project name does not need it, you only need this for the rest API.
+projectNameWithApace = projectNameWithApace.replace("%20"," ")
+
 // here we check if the sprint is not null and that tmp (all iteration paths) does not exsists already.
 // we create a new iteration path if the sprint does not exsists already
-def sprint = replica.customFields."Sprint".value[0]
-
-
-def checkedSprintName = replaceAndRemoveSpecialChars("${sprint?.name?.toString()}")
-//debug.error()
 if(sprint?.name != null && !tmp.contains(checkedSprintName)){
     addSprintToIteration(sprint, projectName)
-    workItem.iterationPath = "${projectName}\\${checkedSprintName}"
+    workItem.iterationPath = "${projectNameWithApace}\\${checkedSprintName}"
 }else if (sprint?.name != null && tmp.contains(checkedSprintName)){
-    workItem.iterationPath = "${projectName}\\${checkedSprintName}"
+    workItem.iterationPath = "${projectNameWithApace}\\${checkedSprintName}"
 }
