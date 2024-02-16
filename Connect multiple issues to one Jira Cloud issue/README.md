@@ -1,0 +1,17 @@
+# Connect multiple remote issues to one Jira ticket with Exalate
+
+You will need a trigger to automate this process or you can manual sync the ticket to jira with use of the [Exalate sync pannel](https://docs.exalate.com/docs/sync-panel-in-exalate)
+
+This [trigger](https://docs.exalate.com/docs/triggers-in-exalate) depends on which system you're using on the remote side.
+
+#### Possible Triggers
+
+##### [Jira Cloud](https://support.atlassian.com/jira-service-management-cloud/docs/use-advanced-search-with-jira-query-language-jql/)
+
+`project = "your project" and "customField[Short text]" is not EMPTY`
+
+##### [Zendesk](https://support.zendesk.com/hc/en-us/articles/4408882086298-Searching-tickets)
+
+Note that `custom_field_360015212345` needs the ID if your specific custom field => `custom_field_<custom field ID>`
+
+`type:ticket custom_field_360015212345:*`

@@ -1,0 +1,1 @@
+replica.customFields."CF Name" = issue.customFields."CF Name"
