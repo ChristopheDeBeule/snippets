@@ -15,3 +15,18 @@ This [trigger](https://docs.exalate.com/docs/triggers-in-exalate) depends on whi
 Note that `custom_field_360015212345` needs the ID if your specific custom field => `custom_field_<custom field ID>`
 
 `type:ticket custom_field_360015212345:*`
+
+
+## How to connect the issues?
+
+
+When you added your scripts in the right code block (incoming, outgoing) script and you have your triggers in place.
+
+You can create a new ticket in your instance that is connected to your Jira cloud instance and add the Jira issue-key (ABC-1).
+
+When the issue-key is added in your field the trigger will pick it up and send ot over to your Jira cloud instance and it will be connected.
+
+you can add as many tickets you want, but notice that every update you do on the Jira ticket will be visible on your local issue (only fields you sync back from Jira to your local issue).
+
+
+You can find a video [here](./Multi_ZD_to_One_Jira_Issue.mov) where I showcase this with Zendesk and Jira Cloud.
