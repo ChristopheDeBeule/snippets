@@ -20,7 +20,6 @@ def setInlineImage(def comment){
         /filename=#(.+?)# --&gt;/
     ]
 
-    def pattern = null
     def matcher = null
     patternList.each{ p ->
         matcher = comment =~ p
