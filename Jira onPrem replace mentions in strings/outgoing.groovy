@@ -8,7 +8,6 @@ def replaceMentions(String str)
     def matches = (str =~ pattern)
     // Use this patern to find the username
     def replacePattern = /\[~(.+)\]/ 
-    def description = issue.description
 
     // iterate over every match it found
     matches.each { c ->
