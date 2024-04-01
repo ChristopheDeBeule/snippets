@@ -15,16 +15,21 @@ def projectName = encode(workItem.project?.key) ?: encode(workItem.projectKey)
 projectName = projectName.replace("+", "%20") // Name with spaces contains '+' char
 
 // This function gets every iteration path in your project and returns them
-def getAreaPathValuesADO(def projectName){
+def getClassificationnodesADO(def projectName, int classificationnodes = 0){ 
     // get the area and iteration values
     def existingArea = httpClient.get("/${projectName}/_apis/wit/classificationnodes?\$depth=2&api-version=5.0-preview.2",true)
     // this return only the iteration path values
-    return existingArea.value[1]; // 1 is for the iteration path 0 is for the area path
+    if (classificationnodes > 1) debug.error("The 2nd parameter for getClassificationnodesADO('${projectName}', \"\"${classificationnodes}\"\") it to high, please enter 0 (Area Path) or 1 (Iteration Path).")
+    return existingArea.value[classificationnodes]; // 1 is for the iteration path 0 is for the area path
 }
 
 // we search in the iteration children (the values under the project name), we add those names in the tmp list
 def tmp = []
-getAreaPathValuesADO(projectName)?.children.each{ i -> tmp += i?.name}
+
+// The function getClassificationnodesADO returns the area or iteration path in ADO 
+// It expects 2 parameters if you give one it will by default return the area path 
+// The second parameter is an int that will return the area or iteration path
+getClassificationnodesADO(projectName, 1)?.children.each{ i -> tmp += i?.name}
 
 
 def shortPost(def sprint, def projectName){
