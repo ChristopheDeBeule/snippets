@@ -1,26 +1,31 @@
 import groovy.json.JsonOutput
 
+
+// Collect added comments.
 replica.addedComments.collect {
  
     comment ->
-    def isPublish = "true"
+    def internal = "true"
     if (comment.internal) {
-        isPublish = "false"
+        internal = "false"
     }
     def SFCommentId = ""
+
+    // Add the comment as a case comment istead of chatter feed.
     def res2 = httpClient.http(
         "POST",
         "/services/data/v54.0/sobjects/CaseComment",
         JsonOutput.toJson([
             "CommentBody": "[${comment.author.displayName}] commented : ${nodeHelper.stripHtml(comment.body)}",
             "ParentId" : "${entity.Id}", 
-            "isPublished": "${isPublish}"
+            "isPublished": "${internal}" 
         ]),
         null,
         null
     ) {
         req ,
         res2 ->
+        // When the rest api call is successfully fulfilled set the SFCommentId var.
         if (res2.code == 201) {
 
             SFCommentId = res2?.body?.id
