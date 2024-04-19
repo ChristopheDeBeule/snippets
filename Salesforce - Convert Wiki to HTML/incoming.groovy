@@ -107,43 +107,43 @@ class WikiToHtml{
   }
 
 
-	public def wikiToHTML(String wiki){
+  public def wikiToHTML(String wiki){
     def splitted = wiki.split(System.lineSeparator())
     String text = ""
 
     int index = 0
 
     while(index < splitted.size()){
-        def lineResult = processList(splitted, index)
-        index = lineResult.index
-        def appender = lineResult.value
-      
-        String headerResult = processHeader(splitted[index])
-        if(headerResult){
-            appender += headerResult
-            index++  // Increment the index to skip the header line in the next loop iteration
-        }
-      
-        // Process URLs separately to ensure they don't get duplicated in text output
-        String newUrl = processUrl(splitted[index], false)
-        if (newUrl){
-            appender += newUrl
-            index++  // Increment the index to skip the URL line in the next loop iteration
-        } else {
-            // Only process bold and italic text if the line is not a URL
-            appender += processBoldAndItalicText(splitted[index])
-        }
+      def lineResult = processList(splitted, index)
+      index = lineResult.index
+      def appender = lineResult.value
+    
+      String headerResult = processHeader(splitted[index])
+      if(headerResult){
+          appender += headerResult
+          index++  // Increment the index to skip the header line in the next loop iteration
+      }
+    
+      // Process URLs separately to ensure they don't get duplicated in text output
+      String newUrl = processUrl(splitted[index], false)
+      if (newUrl){
+          appender += newUrl
+          index++  // Increment the index to skip the URL line in the next loop iteration
+      } else {
+          // Only process bold and italic text if the line is not a URL
+          appender += processBoldAndItalicText(splitted[index])
+      }
 
-        if(appender.isEmpty())
-            text += splitted[index] + "<br>" 
-        else
-            text += appender
+      if(appender.isEmpty())
+          text += splitted[index] + "<br>" 
+      else
+          text += appender
 
-        index++
+      index++
     }
 
     return text
-	}
+  }
 }
 
 
@@ -151,13 +151,13 @@ if(firstSync){
   entity.entityType = "Case"
 }
 
-
+WikiToHtml convert = new WikiToHtml()
 
 if(entity.entityType == "Case"){
   entity.Subject      = replica.summary
   entity.Description  = replica.description
   //debug.error(html)
-  entity.Multi_text__c  = wikiToHtml(replica.description)
+  entity.Multi_text__c  = convert.wikiToHtml(replica.description)
 
   entity.Origin       = "Web"
   entity.Status       = "New"
