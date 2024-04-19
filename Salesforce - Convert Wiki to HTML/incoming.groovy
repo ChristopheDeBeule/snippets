@@ -26,7 +26,7 @@ class WikiToHtml{
         def tmp = match.group(2)
         tmp = processBoldAndItalicText(tmp)
         tmp = processUrl(tmp, true)
-        listItems += "<li>${tmp}</li>\n"
+        listItems += "<li>${tmp}</li>"
         i++
     }
 
@@ -34,7 +34,7 @@ class WikiToHtml{
     if(matches.group(1) == "*")
       listType = "ul"
 
-    return new lineProcessResult(i, "<${listType}>\n${listItems.join()}</${listType}>\n")
+    return new lineProcessResult(i, "<${listType}>${listItems.join()}</${listType}>")
   }
 
   private def processHeader(String line) {
@@ -44,7 +44,7 @@ class WikiToHtml{
     if(!matches.find())
       return ""
 
-    return "<h${matches.group(1)}>${matches.group(2)}</h${matches.group(1)}>\n"
+    return "<h${matches.group(1)}>${matches.group(2)}</h${matches.group(1)}><br>"
   }
   // These functions processBoldText & processItalicText will only work if the string or word is bold or italic.
 //   def processBoldText(String line) {
@@ -82,7 +82,7 @@ class WikiToHtml{
     if(matches.group(2).startsWith("http") && isList)
         return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>"
      else
-        return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>\n"
+        return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a><br>"
          
 	
     
@@ -138,7 +138,7 @@ class WikiToHtml{
         }
 
         if(appender.isEmpty())
-            text += splitted[index] + "\n" 
+            text += splitted[index] + "<br>" 
         else
             text += appender
 
@@ -148,7 +148,6 @@ class WikiToHtml{
     return text
 	}
 }
-
 
 
 if(firstSync){
