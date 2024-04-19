@@ -8,7 +8,7 @@ class lineProcessResult{
   }
 }
 
-class WikiToHtml{
+private class WikiToHtml{
   def processList(def lines, int index) {
     def regex = /^\s*([#*]) \s*(.*)$/
     def matches = lines[index] =~ regex
@@ -36,7 +36,7 @@ class WikiToHtml{
     return new lineProcessResult(i, "<${listType}>${listItems.join()}</${listType}>")
   }
 
-  def processHeader(String line) {
+  private def processHeader(String line) {
     def regex = /^\s*h([0-6])\.\s*(.*)$/
     def matches = line =~ regex
 
@@ -47,7 +47,7 @@ class WikiToHtml{
   }
   // These functions processBoldText & processItalicText will only work if the string or word is bold or italic.
   // Not when a string or word is bold and italic
-  // def processBoldText(String line) {
+  // private def processBoldText(String line) {
   //   def regex = /\*(.*?)\*/ /* /^\s*\*(.*)\*\s*$/ */
   //   def matches = line =~ regex
 
@@ -59,7 +59,7 @@ class WikiToHtml{
 
   // }
 
-  // def processItalicText(String line) {
+  // private def processItalicText(String line) {
   //   def regex = /_(.*?)_/      /* /^\s*_(.*)_\s*$/ */
   //   def matches = line =~ regex
 
@@ -70,7 +70,7 @@ class WikiToHtml{
   //   return line.replaceAll("_${matches.group(1)}_",tmp)
   // }
 
-  def processUrl(String line){
+  private def processUrl(String line){
     // Separate handling for links to ensure they match the correct format
     def regex = /\[(.*?)\s*\|\s*(.*?)\]/ /* /\[([^\[\]|]+)\|([^\[\]]+)\]/ */
     def matches = line =~ regex
@@ -84,7 +84,7 @@ class WikiToHtml{
 
 
   // This function will keep the format if you have bold italic text and regular bold/italic text
-  def processBoldAndItalicText(String line) {
+  private def processBoldAndItalicText(String line) {
     // Process bold text
     line = replaceText(line, /\*(.+?)\*/, '<strong>', '</strong>')
     // Process italic text
@@ -93,7 +93,7 @@ class WikiToHtml{
     return line
   }
 
-  def replaceText(String text, def regex, String startTag, String endTag) {
+  private def replaceText(String text, def regex, String startTag, String endTag) {
     def matcher = text =~ regex
     StringBuffer sb = new StringBuffer()
     while (matcher.find()) {
@@ -104,7 +104,7 @@ class WikiToHtml{
   }
 
 
-  def wikiToHTML(String wiki){
+  public def wikiToHTML(String wiki){
     def splitted = wiki.split(System.lineSeparator())
     String text = ""
 
