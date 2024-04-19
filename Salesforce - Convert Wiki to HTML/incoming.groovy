@@ -8,7 +8,7 @@ class lineProcessResult{
   }
 }
 
-private class WikiToHtml{
+class WikiToHtml{
   def processList(def lines, int index) {
     def regex = /^\s*([#*]) \s*(.*)$/
     def matches = lines[index] =~ regex
