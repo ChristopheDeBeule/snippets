@@ -9,7 +9,7 @@ class lineProcessResult{
 }
 
 class WikiToHtml{
-  private def processList(def lines, int index) {
+  def processList(def lines, int index) {
     def regex = /^\s*([#*]) \s*(.*)$/
     def matches = lines[index] =~ regex
 
@@ -25,7 +25,8 @@ class WikiToHtml{
 
         def tmp = match.group(2)
         tmp = processBoldAndItalicText(tmp)
-        listItems += "<li>${tmp}</li>"
+        tmp = processUrl(tmp, true)
+        listItems += "<li>${tmp}</li>\n"
         i++
     }
 
@@ -33,7 +34,7 @@ class WikiToHtml{
     if(matches.group(1) == "*")
       listType = "ul"
 
-    return new lineProcessResult(i, "<${listType}>${listItems.join()}</${listType}>")
+    return new lineProcessResult(i, "<${listType}>\n${listItems.join()}</${listType}>\n")
   }
 
   private def processHeader(String line) {
@@ -43,43 +44,48 @@ class WikiToHtml{
     if(!matches.find())
       return ""
 
-    return "<h${matches.group(1)}>${matches.group(2)}</h${matches.group(1)}>"
+    return "<h${matches.group(1)}>${matches.group(2)}</h${matches.group(1)}>\n"
   }
   // These functions processBoldText & processItalicText will only work if the string or word is bold or italic.
-  // Not when a string or word is bold and italic
-  // private def processBoldText(String line) {
-  //   def regex = /\*(.*?)\*/ /* /^\s*\*(.*)\*\s*$/ */
-  //   def matches = line =~ regex
+//   def processBoldText(String line) {
+//   def regex = /\*(.*?)\*/
+//   def matches = line =~ regex
+  
+//   if(!matches.find())
+//     return ""
+  
+//   String tmp = "<strong>${matches.group(1)}</strong>"
+//   return line.replaceAll("\\*${matches.group(1)}\\*",tmp)
+// }
 
-  //   if(!matches.find())
-  //     return ""
+// def processItalicText(String line) {
+//   def regex = /_(.*?)_/
+//   def matches = line =~ regex
+  
+//   if(!matches.find())
+//     return ""
+    
+//   String tmp = "<em>${matches.group(1)}</em>"
+//   return line.replaceAll("_${matches.group(1)}_",tmp) 
+// }
 
-  //   String tmp = "<strong>${matches.group(1)}</strong>"
-  //   return line.replaceAll("\\*${matches.group(1)}\\*",tmp)
-
-  // }
-
-  // private def processItalicText(String line) {
-  //   def regex = /_(.*?)_/      /* /^\s*_(.*)_\s*$/ */
-  //   def matches = line =~ regex
-
-  //   if(!matches.find())
-  //     return ""
-
-  //   String tmp = "<em>${matches.group(1)}</em>"
-  //   return line.replaceAll("_${matches.group(1)}_",tmp)
-  // }
-
-  private def processUrl(String line){
+  private def processUrl(String line, Boolean isList){
     // Separate handling for links to ensure they match the correct format
     def regex = /\[(.*?)\s*\|\s*(.*?)\]/ /* /\[([^\[\]|]+)\|([^\[\]]+)\]/ */
     def matches = line =~ regex
-    if(!matches.find())
-        return ""
-    if(matches.group(2).startsWith("http"))
+    //Check if the pattern found a match 
+    if (!matches.find()) {
+        // When no match is found we return the Original line if the isList is true otherwise we return an empty String
+        return isList ? line : ""
+    }
+    // We add a line break if it's not a list item, list items don't need a line break.
+    if(matches.group(2).startsWith("http") && isList)
         return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>"
-    else
-        return match.group(0)
+     else
+        return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>\n"
+         
+	
+    
   }
 
 
@@ -104,44 +110,58 @@ class WikiToHtml{
   }
 
 
-  public def wikiToHTML(String wiki){
+	public def wikiToHTML(String wiki){
     def splitted = wiki.split(System.lineSeparator())
     String text = ""
 
     int index = 0
 
     while(index < splitted.size()){
-      def lineResult = processList(splitted, index)
-      index = lineResult.index
-      def appender = lineResult.value
-      appender += processHeader(splitted[index])
-      //appender += processBoldText(splitted[index])
-      //appender += processItalicText(splitted[index])
-      appender += processBoldAndItalicText(splitted[index])
-      appender += processUrl(splitted[index])
+        def lineResult = processList(splitted, index)
+        index = lineResult.index
+        def appender = lineResult.value
+      
+        String headerResult = processHeader(splitted[index])
+        if(headerResult){
+            appender += headerResult
+            index++  // Increment the index to skip the header line in the next loop iteration
+        }
+      
+        // Process URLs separately to ensure they don't get duplicated in text output
+        String newUrl = processUrl(splitted[index], false)
+        if (newUrl){
+            appender += newUrl
+            index++  // Increment the index to skip the URL line in the next loop iteration
+        } else {
+            // Only process bold and italic text if the line is not a URL
+            appender += processBoldAndItalicText(splitted[index])
+        }
 
-      if(appender == "")
-        text += splitted[index] + "<br>" 
-      else
-        text += appender
-      index++
+        if(appender.isEmpty())
+            text += splitted[index] + "\n" 
+        else
+            text += appender
+
+        index++
     }
 
     return text
-  }
+	}
 }
 
-WikiToHtml convert = new WikiToHtml()
+
 
 if(firstSync){
   entity.entityType = "Case"
 }
 
+
+
 if(entity.entityType == "Case"){
   entity.Subject      = replica.summary
   entity.Description  = replica.description
   //debug.error(html)
-  entity.Multi_text__c  = convert.wikiToHTML(replica.description)
+  entity.Multi_text__c  = wikiToHtml(replica.description)
 
   entity.Origin       = "Web"
   entity.Status       = "New"
