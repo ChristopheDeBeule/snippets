@@ -75,17 +75,14 @@ class WikiToHtml{
     def matches = line =~ regex
     //Check if the pattern found a match 
     if (!matches.find()) {
-        // When no match is found we return the Original line if the isList is true otherwise we return an empty String
-        return isList ? line : ""
+      // When no match is found we return the Original line if the isList is true otherwise we return an empty String
+      return isList ? line : ""
     }
     // We add a line break if it's not a list item, list items don't need a line break.
     if(matches.group(2).startsWith("http") && isList)
-        return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>"
-     else
-        return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a><br>"
-         
-	
-    
+      return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>"
+    else
+      return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a><br>"
   }
 
 
