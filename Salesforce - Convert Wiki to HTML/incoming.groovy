@@ -121,7 +121,7 @@ class WikiToHtml{
       appender += processUrl(splitted[index])
 
       if(appender == "")
-        text += splitted[index] + "\n" 
+        text += splitted[index] + "<br>" 
       else
         text += appender
       index++
