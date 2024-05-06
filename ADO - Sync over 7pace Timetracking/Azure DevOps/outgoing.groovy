@@ -211,6 +211,31 @@ for(int i = 0; i < json.value.size();i++){
 }
 
 /*
+
+
+This is how it would look in the outgoing sync:
+ "customKeys": {
+      "7pace": {
+        "PeriodLength": 3600,
+        "Comment": "Test one hour",
+        "WorklogDate": {
+          "ShortDate": "2024-05-06",
+          "Year": 2024,
+          "Month": 5,
+          "Day": 6
+        },
+        "User": {
+          "Name": "John Doe",
+          "Email": "john.doe@test.com"
+        },
+        "EditedByUser": {
+          "Name": "John Doe",
+          "Email": "john.doe@test.com"
+        }
+      }
+    },
+
+
 Values: 
 
 "value": [
