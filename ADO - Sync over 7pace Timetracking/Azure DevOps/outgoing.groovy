@@ -1,3 +1,4 @@
+import groovy.json.JsonOutput
 class GroovyHttpClient {
     // SCALA HELPERS
     private static <T> T await(scala.concurrent.Future<T> f) { scala.concurrent.Await$.MODULE$.result(f, scala.concurrent.duration.Duration$.MODULE$.Inf()) }
@@ -162,10 +163,10 @@ class GroovyHttpClient {
 
 // Get time tracking
 
-// Note when you create a new token it can take a few moments to do API calls. when you create a new token it's possible the first 30 min you'll get an authentication error.
 // Get API Key from env Vars
 def apiKey = System.getenv('API_KEY')
 
+//debug.error("${apiKey}") // Raxgd5tBL45JI_U8KRFqp40US0qqEwepUCK6NT0CP1c
 def res = ""
 try{
     res = new GroovyHttpClient(httpClient)
@@ -173,7 +174,7 @@ try{
             "GET",
             "https://christophedebeule.timehub.7pace.com/api/odata/v3.2/workLogsOnly",
             null,
-            ["Accept": ["application/json"], "Content-type" : ["application/json"], "Authorization":["Bearer <Your 7pace token>"] ]
+            ["Accept": ["application/json"], "Content-type" : ["application/json"], "Authorization":["Bearer ${apiKey}"] ]
     )
     {
         response ->
@@ -182,62 +183,49 @@ try{
         } else response.body as String
     }
 }catch (e){
-    throw new Exception("Error occurred: ${e.message}")
+    throw new Exception("Error occurred in ${e.message}")
 }
 
 def js = new groovy.json.JsonSlurper()
 def json = js.parseText(res)
-replica.customKeys."7pace" = [:]
-for(int i = 0; i < json.value.size();i++){
-    if (json.value[i].WorkItemId.toString() == workItem.key.toString()){
-        replica.customKeys."7pace".put("PeriodLength",json.value[i]?.PeriodLength)
-        replica.customKeys."7pace".put("Comment",json.value[i]?.Comment)
-        replica.customKeys."7pace".put("WorklogDate",[
-            "ShortDate": json.value[i]?.WorklogDate?.ShortDate,
-            "Year": json.value[i]?.WorklogDate?.Year,
-            "Month": json.value[i]?.WorklogDate?.Month,
-            "Day": json.value[i]?.WorklogDate?.Day
-        ])
-        replica.customKeys."7pace".put("User",[
-            "Name": json.value[i]?.User?.Name,
-            "Email": json.value[i]?.User?.Email,
-        ])
-        replica.customKeys."7pace".put("EditedByUser",[
-            "Name": json.value[i]?.EditedByUser?.Name,
-            "Email": json.value[i]?.EditedByUser?.Email,
-        ])
+
+// Function to filter and restructure JSON
+def filterJsonData(jsonData) {
+    return jsonData.value.collect { entry ->
+        if (entry.WorkItemId.toString() == workItem.key.toString()){
+             // Check for existence of PeriodLength and other properties before accessing
+            def periodLength = entry?.PeriodLength ?: 0
+            def comment = entry?.Comment ?: "No comment provided"
+            def worklogDate = entry?.WorklogDate ?: [ShortDate: "Not provided", Year: 0, Month: 0, Day: 0]
+            def userName = entry?.User?.Name ?: "Unknown"
+            def userEmail = entry?.User?.Email ?: "No email provided"
+            def editedUserName = entry?.EditedByUser?.Name ?: "Unknown"
+            def editedUserEmail = entry?.EditedByUser?.Email ?: "No email provided"
+
+            [
+                "PeriodLength": periodLength,
+                "Comment": comment,
+                "WorklogDate": worklogDate,
+                "User": [
+                    "Name": userName,
+                    "Email": userEmail
+                ],
+                "EditedByUser": [
+                    "Name": editedUserName,
+                    "Email": editedUserEmail
+                ]
+            ]
+        }
     }
     
 }
 
+// findAll removes all time trackings from other issues.
+def filteredJson = filterJsonData(json).findAll { it != null }
+replica.customKeys."7pace" = JsonOutput.toJson(filteredJson)
+
 /*
-
-
-This is how it would look in the outgoing sync:
- "customKeys": {
-      "7pace": {
-        "PeriodLength": 3600,
-        "Comment": "Test one hour",
-        "WorklogDate": {
-          "ShortDate": "2024-05-06",
-          "Year": 2024,
-          "Month": 5,
-          "Day": 6
-        },
-        "User": {
-          "Name": "John Doe",
-          "Email": "john.doe@test.com"
-        },
-        "EditedByUser": {
-          "Name": "John Doe",
-          "Email": "john.doe@test.com"
-        }
-      }
-    },
-
-
-Values: 
-
+// This is how it looks when we fetch from the API.
 "value": [
         {
             "Id": "0a0a0000-0a0a-000a-a0a0-00000a0000aa",
