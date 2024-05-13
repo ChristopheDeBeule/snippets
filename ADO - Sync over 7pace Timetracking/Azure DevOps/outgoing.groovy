@@ -162,17 +162,14 @@ class GroovyHttpClient {
 }
 
 // Get time tracking
-
 // Get API Key from env Vars
 def apiKey = System.getenv('API_KEY')
-
-//debug.error("${apiKey}") // Raxgd5tBL45JI_U8KRFqp40US0qqEwepUCK6NT0CP1c
 def res = ""
 try{
     res = new GroovyHttpClient(httpClient)
     .http(
             "GET",
-            "https://christophedebeule.timehub.7pace.com/api/odata/v3.2/workLogsOnly",
+            "https://christophedebeule.timehub.7pace.com/api/odata/v3.2/workLogsOnly/",
             null,
             ["Accept": ["application/json"], "Content-type" : ["application/json"], "Authorization":["Bearer ${apiKey}"] ]
     )
@@ -191,9 +188,13 @@ def json = js.parseText(res)
 
 // Function to filter and restructure JSON
 def filterJsonData(jsonData) {
-    return jsonData.value.collect { entry ->
+    def totalTime = []
+    def data = jsonData.value.collect { entry ->
         if (entry.WorkItemId.toString() == workItem.key.toString()){
-             // Check for existence of PeriodLength and other properties before accessing
+            
+            totalTime += entry?.PeriodLength
+            
+            // Check for existence of PeriodLength and other properties before accessing
             def periodLength = entry?.PeriodLength ?: 0
             def comment = entry?.Comment ?: "No comment provided"
             def worklogDate = entry?.WorklogDate ?: [ShortDate: "Not provided", Year: 0, Month: 0, Day: 0]
@@ -216,16 +217,18 @@ def filterJsonData(jsonData) {
                 ]
             ]
         }
-    }
-    
+    } 
+    // Add the total time spent to the list.
+    data += ["Total Time Spent": totalTime.sum()]
+    // returns the json object with the data of the given workItem
+    return JsonOutput.toJson(data.findAll { it != null })
 }
 
-// findAll removes all time trackings from other issues.
-def filteredJson = filterJsonData(json).findAll { it != null }
-replica.customKeys."7pace" = JsonOutput.toJson(filteredJson)
-
+// Usage
+replica.customKeys."7pace" = filterJsonData(json)
 /*
-// This is how it looks when we fetch from the API.
+Values: 
+
 "value": [
         {
             "Id": "0a0a0000-0a0a-000a-a0a0-00000a0000aa",
