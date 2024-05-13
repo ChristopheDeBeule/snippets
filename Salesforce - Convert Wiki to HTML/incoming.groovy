@@ -157,7 +157,7 @@ if(entity.entityType == "Case"){
   entity.Subject      = replica.summary
   entity.Description  = replica.description
   //debug.error(html)
-  entity.Multi_text__c  = convert.wikiToHtml(replica.description)
+  entity.Multi_text__c  = convert.wikiToHTML(replica.description)
 
   entity.Origin       = "Web"
   entity.Status       = "New"
