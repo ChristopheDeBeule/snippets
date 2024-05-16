@@ -126,14 +126,13 @@ class GroovyHttpClient {
                 })
                 request = request.withQueryString(scalaQueryParams.toSeq())
             }
- 
             if (body != null) {
                 def writable = play.api.http.Writeable$.MODULE$.wString(play.api.mvc.Codec.utf_8())
                 request = request.withBody(body, writable)
             }
  
             response = await(
-                    request.execute()
+                request.execute()
             )
         } catch (Exception e) {
             throw new com.exalate.api.exception.IssueTrackerException("Unable to perform the request $method $_url with body: \n```$body```\n, please contact Exalate Support: ".toString() + e.message, e)
@@ -163,15 +162,26 @@ class GroovyHttpClient {
 
 // Get time tracking
 // Get API Key from env Vars
-def apiKey = System.getenv('API_KEY')
+def apiKey = System.getenv('API_KEY') // Or add the API as a string here ""
 def res = ""
 try{
+    // Ensure apiKey is explicitly converted to String
+    String authHeader = "Bearer ${apiKey}".toString()
+
+    // Create the headers map with explicit String conversion
+    Map<String, String> headers = [
+        "Accept": ["application/json"],
+        "Content-type": ["application/json"],
+        "Authorization": [authHeader]
+    ]
     res = new GroovyHttpClient(httpClient)
+
+    // NOTE: Only change "your-7pace-apiDomain" to the Domain you have from the 7pace api URL.
     .http(
-            "GET",
-            "https://christophedebeule.timehub.7pace.com/api/odata/v3.2/workLogsOnly/",
-            null,
-            ["Accept": ["application/json"], "Content-type" : ["application/json"], "Authorization":["Bearer ${apiKey}"] ]
+        "GET",
+        "https://your-7pace-apiDomain/api/odata/v3.2/workLogsOnly",
+        null,
+        headers
     )
     {
         response ->
@@ -226,105 +236,3 @@ def filterJsonData(jsonData) {
 
 // Usage
 replica.customKeys."7pace" = filterJsonData(json)
-/*
-Values: 
-
-"value": [
-        {
-            "Id": "0a0a0000-0a0a-000a-a0a0-00000a0000aa",
-            "UserId": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-            "AddedByUserId": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-            "BudgetId": null,
-            "ActivityTypeId": "00000000-0000-0000-0000-000000000000",
-            "WorkItemId": 442,
-            "Timestamp": "2024-04-25T15:56:00Z",
-            "PeriodLength": 3600,
-            "Comment": "Testing",
-            "EditedTimestamp": "2024-04-25T22:56:18.993Z",
-            "CreatedTimestamp": "2024-04-25T22:56:18.993Z",
-            "IsTracked": false,
-            "IsManuallyEntered": true,
-            "IsChanged": false,
-            "IsTrackedExtended": false,
-            "IsImported": false,
-            "IsFromApi": true,
-            "IsBillable": false,
-            "BillablePeriodLength": null,
-            "AddedByUser": {
-                "Id": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-                "Name": "John Doe",
-                "Email": "john.doe@test.com"
-            },
-            "ActivityType": {
-                "Id": "00000000-0000-0000-0000-000000000000",
-                "Color": "#",
-                "Name": "[Not Set]"
-            },
-            "User": {
-                "Id": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-                "Name": "John Doe",
-                "Email": "john.doe@test.com"
-            },
-            "EditedByUser": {
-                "Id": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-                "Name": "John Doe",
-                "Email": "john.doe@test.com"
-            },
-            "Budget": null,
-            "WorklogDate": {
-                "Year": 2024,
-                "Month": 4,
-                "Day": 25,
-                "ShortDate": "2024-04-25"
-            }
-        },
-        {
-            "Id": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-            "UserId": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-            "AddedByUserId": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-            "BudgetId": null,
-            "ActivityTypeId": "00000000-0000-0000-0000-000000000000",
-            "WorkItemId": 449,
-            "Timestamp": "2024-05-06T13:34:00Z",
-            "PeriodLength": 3600,
-            "Comment": "Test one hour",
-            "EditedTimestamp": "2024-05-06T20:34:58.55Z",
-            "CreatedTimestamp": "2024-05-06T20:34:58.55Z",
-            "IsTracked": false,
-            "IsManuallyEntered": true,
-            "IsChanged": false,
-            "IsTrackedExtended": false,
-            "IsImported": false,
-            "IsFromApi": true,
-            "IsBillable": false,
-            "BillablePeriodLength": null,
-            "AddedByUser": {
-                "Id": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-                "Name": "John Doe",
-                "Email": "john.doe@test.com"
-            },
-            "ActivityType": {
-                "Id": "00000000-0000-0000-0000-000000000000",
-                "Color": "#",
-                "Name": "[Not Set]"
-            },
-            "User": {
-                "Id": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-                "Name": "John Doe",
-                "Email": "john.doe@test.com"
-            },
-            "EditedByUser": {
-                "Id": "0a0aaaa0-0000-0000-a0a0-a00000000aaa",
-                "Name": "",
-                "Email": "john.doe@test.com"
-            },
-            "Budget": null,
-            "WorklogDate": {
-                "Year": 2024,
-                "Month": 5,
-                "Day": 6,
-                "ShortDate": "2024-05-06"
-            }
-        }
-    ]
-*/
