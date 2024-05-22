@@ -18,3 +18,22 @@ Out of the box we support:
 * [GitHub](https://github.com/marketplace/exalate-issue-sync) 
 
 If you are interested feel free to book a meeting [here](https://exalate.com/book-demo/).
+
+
+## Repository quick access.
+
+#### Select your connector.
+
+1) [Azure DevOps](https://github.com/ChristopheDeBeule/snippets/tree/main/Azure%20DevOps)
+2) [GitHub](https://github.com/ChristopheDeBeule/snippets/tree/main/GitHub)
+3) [Jira Cloud](https://github.com/ChristopheDeBeule/snippets/tree/main/Jira%20Cloud)
+4) [Jira On Prem](https://github.com/ChristopheDeBeule/snippets/tree/main/Jira%20on%20Prem)
+5) [Salesforce](https://github.com/ChristopheDeBeule/snippets/tree/main/Salesforce)
+6) [ServiceNow](https://github.com/ChristopheDeBeule/snippets/tree/main/ServiceNow)
+7) [Zendesk](https://github.com/ChristopheDeBeule/snippets/tree/main/Zendesk)
+
+
+### Many to one sync
+* [Azure DevOps](https://github.com/ChristopheDeBeule/snippets/tree/main/Azure%20DevOps/ADO%20-%20Connect%20multiple%20issues%20to%20one%20workItem)
+* [Jira On Prem](https://github.com/ChristopheDeBeule/snippets/tree/main/Jira%20on%20Prem/Jira%20OnPrem%20-%20Many%20to%20one%20connection%20(connect%20multiple%20issues%20to%20one%20jira%20onPrem%20issue))
+* [Zendesk](https://github.com/ChristopheDeBeule/snippets/tree/main/Zendesk/Zendesk%20-%20Many%20to%20one)
