@@ -166,7 +166,6 @@ class WikiToHtml{
   }
 }
 
-
 if(firstSync){
   entity.entityType = "Case"
 }
