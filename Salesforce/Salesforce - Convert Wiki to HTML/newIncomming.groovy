@@ -100,6 +100,7 @@ class WikiToHtml{
   }
 
   // New Inline image
+  // TODO: instead of a linke add the image inline dynamically
   private def processImage(String line, def attachments){
     def regex = /(?:!|alt=\")([^|"]+)/
     def matches = line =~ regex
@@ -116,6 +117,7 @@ class WikiToHtml{
         return
       }
     }
+    // TODO: get baseUrl dynamically
     return "<a href=\"https://exalate-9b-dev-ed.develop.lightning.force.com/lightning/r/ContentDocument/${tmp}/view\">${alt}</a>"
   }
 
