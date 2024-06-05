@@ -9,6 +9,13 @@ class lineProcessResult{
 }
 
 class WikiToHtml{
+
+  def helper;
+
+  public def WikiToHtml(def helper) {
+    this.helper = helper;
+  }
+
   private def processList(def lines, int index) {
     def regex = /^\s*([#*]) \s*(.*)$/
     def matches = lines[index] =~ regex
@@ -100,11 +107,12 @@ class WikiToHtml{
   }
 
   // New Inline image
-  // TODO: instead of a linke add the image inline dynamically
-  private def processImage(String line, def attachments){
+  // TODO: instead of a link add the image inline dynamically (SF can't handle this)
+  private def processImage(String line, def attachments, Boolean returnHtml = true){
     def regex = /(?:!|alt=\")([^|"]+)/
     def matches = line =~ regex
-    
+    def baseUrl = this.helper.getTrackerUrl()
+
     if(!matches.find())
       return ""
 
@@ -117,10 +125,39 @@ class WikiToHtml{
         return
       }
     }
-    // TODO: get baseUrl dynamically
-    return "<a href=\"https://exalate-9b-dev-ed.develop.lightning.force.com/lightning/r/ContentDocument/${tmp}/view\">${alt}</a>"
+    if (returnHtml){
+      return "<a href=\"${baseUrl}/lightning/r/ContentDocument/${tmp}/view\">${alt}</a>"
+    }else{
+      return "${baseUrl}/lightning/r/ContentDocument/${tmp}/view" // just retruns the URL
+    }
+    
+  }
+  // This is for system fields
+  // TODO: Fix raw data, in the comments and description Salesfroce shows the raw data instead (HTML tags are visible)
+  // This method only append and applies changed on the images
+  public def setInlineImage(String wiki, attachments = null){
+    if(!wiki) return ""
+
+    def lines = wiki.split('\n')
+    def index = 0
+    def appender = ""
+    while(index < lines.size()){
+      def processedImage = processImage(lines[index], attachments, false)
+      if(processedImage){
+        appender += processedImage + '\n'
+        index++
+      }
+      else if (!lines[index].isEmpty()){
+        appender += lines[index] + '\n'
+        index++
+      }
+      index++
+    }
+    return appender
   }
 
+
+  // This works perfect on Custom rich text fields
   public def wikiToHTML(String wiki, attachments = null){
 
     if(!wiki) return ""
@@ -172,16 +209,19 @@ if(firstSync){
   entity.entityType = "Case"
 }
 
-WikiToHtml convert = new WikiToHtml()
+WikiToHtml convert = new WikiToHtml(syncHelper)
 
 if(entity.entityType == "Case"){
   entity.Subject      = replica.summary  
-
+  
   entity.Origin       = "Web"
   entity.Status       = "New"
   entity.comments     = commentHelper.mergeComments(entity, replica)
   entity.attachments  = attachmentHelper.mergeAttachments(entity, replica)
   store(entity) // we store the issue so it created the ID for the attachmentents
-  entity.Description  = convert.wikiToHTML(replica.description,  entity.attachments)
+  entity.Description  = convert.setInlineImage(replica.description,  entity.attachments)
   entity.Multi_text__c  = convert.wikiToHTML(replica.description,  entity.attachments)
+   entity.comments     = commentHelper.mergeComments(entity, replica, {comment ->
+      comment.body = convert.setInlineImage(comment.body, entity.attachments)
+   })
 }
