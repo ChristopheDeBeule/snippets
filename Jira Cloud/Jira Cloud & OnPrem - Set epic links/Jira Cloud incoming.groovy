@@ -15,7 +15,7 @@
 // }
 
 // NEW Way
-def setNewParentField(remoteIssue){
+def setNewParentField(){
     // Make sure the issue Type is not a sub-task and that we have a parentId
   if(!replica.parentId || replica.type?.name == "sub-task") return
   def localIssue = nodeHelper.getLocalIssueFromRemoteId(replica.parentId.toLong())
