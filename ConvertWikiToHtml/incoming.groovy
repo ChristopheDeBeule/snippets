@@ -19,21 +19,18 @@ class WikiToHtml{
     def i = index
     def listItems = []
     while(i < lines.size()) {
-        def match = lines[i] =~ regex
-        if(!match.find())
-        break
+      def match = lines[i] =~ regex
+      if(!match.find())
+      break
 
-        def tmp = match.group(2)
-        tmp = processBoldAndItalicText(tmp)
-        tmp = processUrl(tmp, true)
-        listItems += "<li>${tmp}</li>"
-        i++
+      def tmp = match.group(2)
+      tmp = processBoldAndItalicText(tmp)
+      tmp = processUrl(tmp, true)
+      listItems += "<li>${tmp}</li>"
+      i++
     }
 
-    def listType = "ol"
-    if(matches.group(1) == "*")
-      listType = "ul"
-
+    def listType = matches.group(1) == "*" ? "ul" : "ol"
     return new lineProcessResult(i, "<${listType}>${listItems.join()}</${listType}>")
   }
 
@@ -42,32 +39,10 @@ class WikiToHtml{
     def matches = line =~ regex
 
     if(!matches.find())
-      return ""
+    return ""
 
     return "<h${matches.group(1)}>${matches.group(2)}</h${matches.group(1)}><br>"
   }
-  // These functions processBoldText & processItalicText will only work if the string or word is bold or italic.
-//   def processBoldText(String line) {
-//   def regex = /\*(.*?)\*/
-//   def matches = line =~ regex
-  
-//   if(!matches.find())
-//     return ""
-  
-//   String tmp = "<strong>${matches.group(1)}</strong>"
-//   return line.replaceAll("\\*${matches.group(1)}\\*",tmp)
-// }
-
-// def processItalicText(String line) {
-//   def regex = /_(.*?)_/
-//   def matches = line =~ regex
-  
-//   if(!matches.find())
-//     return ""
-    
-//   String tmp = "<em>${matches.group(1)}</em>"
-//   return line.replaceAll("_${matches.group(1)}_",tmp) 
-// }
 
   private def processUrl(String line, Boolean isList){
     // Separate handling for links to ensure they match the correct format
@@ -100,7 +75,7 @@ class WikiToHtml{
     def matcher = text =~ regex
     StringBuffer sb = new StringBuffer()
     while (matcher.find()) {
-        matcher.appendReplacement(sb, "${startTag}${matcher.group(1)}${endTag}")
+      matcher.appendReplacement(sb, "${startTag}${matcher.group(1)}${endTag}")
     }
     matcher.appendTail(sb)
     return sb.toString()
@@ -120,47 +95,33 @@ class WikiToHtml{
     
       String headerResult = processHeader(splitted[index])
       if(headerResult){
-          appender += headerResult
-          index++  // Increment the index to skip the header line in the next loop iteration
+        appender += headerResult
+        index++  // Increment the index to skip the header line in the next loop iteration
       }
     
       // Process URLs separately to ensure they don't get duplicated in text output
       String newUrl = processUrl(splitted[index], false)
       if (newUrl){
-          appender += newUrl
-          index++  // Increment the index to skip the URL line in the next loop iteration
+        appender += newUrl
+        index++  // Increment the index to skip the URL line in the next loop iteration
       } else {
-          // Only process bold and italic text if the line is not a URL
-          appender += processBoldAndItalicText(splitted[index])
+        // Only process bold and italic text if the line is not a URL
+         appender += processBoldAndItalicText(splitted[index])
       }
 
       if(appender.isEmpty())
-          text += splitted[index] + "<br>" 
+        text += splitted[index] + "<br>" 
       else
-          text += appender
+        text += appender
 
       index++
     }
-
+    // This will set the color if there are color atributes.
+    text = text.replaceAll(/\{color:#([0-9a-fA-F]{6})\}(.*?)\{color\}/, "<span style=\"color:#\$1\">\$2</span>")
     return text
   }
 }
 
-
-if(firstSync){
-  entity.entityType = "Case"
-}
-
+// Create a new WikiToHtml obect and call the wikiToHTML method.
 WikiToHtml convert = new WikiToHtml()
-
-if(entity.entityType == "Case"){
-  entity.Subject      = replica.summary
-  entity.Description  = replica.description
-  //debug.error(html)
-  entity.Multi_text__c  = convert.wikiToHTML(replica.description)
-
-  entity.Origin       = "Web"
-  entity.Status       = "New"
-  entity.comments     = commentHelper.mergeComments(entity, replica)
-  entity.attachments  = attachmentHelper.mergeAttachments(entity, replica)
-}
+def convertedString = convert.wikiToHTML(yourString)
