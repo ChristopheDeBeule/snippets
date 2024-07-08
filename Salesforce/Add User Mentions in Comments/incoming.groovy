@@ -33,11 +33,7 @@ def createSegmentBody(String comment){
     // iterate over the list and add the segment body
   for (int i = 0; i < splittedComment.size(); i++){
     if (splittedComment[i] == "") continue;
-    if (i < splittedComment.size() - 1) {
-      segmentBody.add(getMessageSegment(splittedComment[i]))
-    }else{
-      segmentBody.add(getMessageSegment(splittedComment[i]))
-    }
+    segmentBody.add(getMessageSegment(splittedComment[i]))
   }
   // Return json object
   return JsonOutput.toJson([subjectId: entity.key, body: [ messageSegments: segmentBody]])
