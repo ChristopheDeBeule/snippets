@@ -1,12 +1,12 @@
-// Thiw will be the Jira cloud outgoing
-// we need to format the userID to an email so we can check if the user exists on the ADO side.
-
+// This will change the user mentions from an ID to an email (needed in ADO)
 replica.comments = issue.comments.collect{
   c ->
   def matcher = c.body =~ /\[~accountid:(.*?)]/ 
   matcher.each {
-    def user = nodeHelper.getUser(matcher.group(1))?.email ?: "Stranger"         
-    c.body = c.body.replace(matcher.group(1),user)
+    def user = nodeHelper.getUser(matcher.group(1)) ?: "john@doe.com" 
+    def newBodyreplacement = "${user?.email}|${user?.displayName}"     
+    c.body = c.body.replace(matcher.group(1),newBodyreplacement)
   }
-  c 
+  c
+  
 }
