@@ -63,11 +63,12 @@ class WikiToHtml{
       // When no match is found we return the Original line if the isList is true otherwise we return an empty String
       return isList ? line : ""
     }
+    def tmpLine = line.replace(matches.group(0), "").trim()
     // We add a line break if it's not a list item, list items don't need a line break.
     if(matches.group(2).startsWith("http") && isList)
-      return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>"
+      return "${tmpLine} <a href=\"${matches.group(2)}\">${matches.group(1)}</a>"
     else
-      return "<a href=\"${matches.group(2)}\">${matches.group(1)}</a><br>"
+      return "${tmpLine} <a href=\"${matches.group(2)}\">${matches.group(1)}</a><br>"
   }
 
   // This function will keep the format if you have bold italic text and regular bold/italic text
@@ -157,3 +158,11 @@ class WikiToHtml{
     return text
   }
 }
+
+
+WikiToHtml convert = new WikiToHtml(nodeHelper, workItem.project?.name)
+workItem.description  = replica.description
+workItem.comments     = commentHelper.mergeComments(workItem, replica, {c ->
+  c.body = convert.wikiToHTML(c.body)
+  c
+})
