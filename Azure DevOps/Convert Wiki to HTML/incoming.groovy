@@ -55,8 +55,9 @@ class WikiToHtml{
 
   private def processUrl(String line, Boolean isList){
     // Separate handling for links to ensure they match the correct format
-    def regex = /\[(.*?)\s*\|\s*(.*?)\]/ /* /\[([^\[\]|]+)\|([^\[\]]+)\]/ */
+    def regex = /\[(.*?)\s*\|\s*(http?:\/\/[^\s\]]+)\]/
     def matches = line =~ regex
+
     //Check if the pattern found a match 
     if (!matches.find()) {
       // When no match is found we return the Original line if the isList is true otherwise we return an empty String
@@ -94,21 +95,19 @@ class WikiToHtml{
   }
 
   private String processUserMention(String line){
-    def regex = /\[~accountid:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\]/ 
+    def regex = /\[~accountid:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\|([^\]]+)\]/
     def matches = line =~ regex
-    
     if(!matches.find()) 
       return ""
+    
     matches.each {
       def user = this.helper.getUserByEmail(matches.group(1), this.projectName) 
-           
       if(!user){
-        line = line.replace(matches.group(0), matches.group(1))
+        line = line.replace(matches.group(0), "@${matches.group(2)}") // 1 = email, 2 = user name
       }else{ 
         line = line.replace(matches.group(0), "<a href=\"#\" data-vss-mention=\"version:2.0,"+user?.key+"\"></a>")
       }
     } 
-    
     return line + "<br>"
   }
 
@@ -120,6 +119,7 @@ class WikiToHtml{
 
     //throw new Exception("${splitted}")
     while(index < splitted.size()){
+      
       def lineResult = processList(splitted, index)
       index = lineResult.index
       def appender = lineResult.value
@@ -129,24 +129,20 @@ class WikiToHtml{
         appender += headerResult
         index++  // Increment the index to skip the header line in the next loop iteration
       }
-      //throw new Exception("List length ${splitted.size()}")
+      
       // Process URLs separately to ensure they don't get duplicated in text output
       String newUrl = processUrl(splitted[index], false)
       if (newUrl){
         appender += newUrl
-        index++  // Increment the index to skip the URL line in the next loop iteration
+        //index++  // Increment the index to skip the URL line in the next loop iteration // DEBUG
       } else {
         // Only process bold and italic text if the line is not a URL
         appender += processBoldAndItalicText(splitted[index])
       }
-      // Make sure we don't go out of bounds
-      if(check && index == splitted.size()){
-        check = false
-        index--
-      }
+
       String userMention = processUserMention(splitted[index])
       if (userMention){
-        appender += userMention
+        appender = appender.replace(appender,userMention)
       }
 
       if(appender.isEmpty())
