@@ -69,8 +69,8 @@ class WikiToHtml{
 
     if(isList)
       return tmpLine
-    else
-      return "${tmpLine}<br>"
+      
+    return "${tmpLine}<br>"
   }
 
   // This function will keep the format if you have bold italic text and regular bold/italic text
