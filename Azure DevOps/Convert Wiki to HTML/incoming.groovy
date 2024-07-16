@@ -63,12 +63,14 @@ class WikiToHtml{
       // When no match is found we return the Original line if the isList is true otherwise we return an empty String
       return isList ? line : ""
     }
-    def tmpLine = line.replace(matches.group(0), "").trim()
+
+    def tmpLine = line.replace(matches.group(0), "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>").trim()
     // We add a line break if it's not a list item, list items don't need a line break.
-    if(matches.group(2).startsWith("http") && isList)
-      return "${tmpLine} <a href=\"${matches.group(2)}\">${matches.group(1)}</a>"
+
+    if(isList)
+      return tmpLine
     else
-      return "${tmpLine} <a href=\"${matches.group(2)}\">${matches.group(1)}</a><br>"
+      return "${tmpLine}<br>"
   }
 
   // This function will keep the format if you have bold italic text and regular bold/italic text
