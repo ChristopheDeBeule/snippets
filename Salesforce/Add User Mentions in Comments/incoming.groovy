@@ -15,11 +15,11 @@ def getMessageSegment(String type){
   return [type:"Text",text:type]    
 }
 
-def createSegmentBody(String comment){
+def createSegmentBody(def comment){
   def regex = /\[~accountid:.*?]/
   // Use findAll to capture all user mentions
-  def matches = comment.findAll(regex)
-  def splitString = comment.split(regex)
+  def matches = comment.body.findAll(regex)
+  def splitString = comment.body.split(regex)
 
   // Merge the split strings and matches
   def splittedComment = []
@@ -35,6 +35,8 @@ def createSegmentBody(String comment){
     if (splittedComment[i] == "") continue;
     segmentBody.add(getMessageSegment(splittedComment[i]))
   }
+  // This will add a string to your likings, Comment out the line below if you don't need to add to the comment
+  segmentBody.add([type:"Text",text:"\nThis comment is made by ${comment.author.displayName}\nOn ${getFullDate(comment.created, true)}"])
   // Return json object
   return JsonOutput.toJson([subjectId: entity.key, body: [ messageSegments: segmentBody]])
 }
@@ -44,7 +46,7 @@ def addComments(def comments){
   // collect all comments and post the createSegmentBody...
   comments.collect{ c ->
     if (c.body){
-      def res = httpClient.post("/services/data/v54.0/chatter/feed-elements/",createSegmentBody(c.body),null, ["Content-Type":["application/json"]]){
+      def res = httpClient.post("/services/data/v54.0/chatter/feed-elements/",createSegmentBody(c),null, ["Content-Type":["application/json"]]){
         req,
         res ->
         // When the rest api call is successfully fulfilled set the SFCommentId var.
