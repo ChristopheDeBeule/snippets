@@ -57,20 +57,20 @@ class WikiToHtml{
     // Separate handling for links to ensure they match the correct format
     def regex = /\[(.*?)\s*\|\s*(https?:\/\/[^\s\]]+)\]/
     def matches = line =~ regex
-   
+
     //Check if the pattern found a match 
     if (!matches.find()) {
       // When no match is found we return the Original line if the isList is true otherwise we return an empty String
       return isList ? line : ""
     }
-    
+
     def tmpLine = line.replace(matches.group(0), "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>").trim()
     // We add a line break if it's not a list item, list items don't need a line break.
 
     if(isList)
       return tmpLine
-      
-    return "${tmpLine}<br>"
+    else
+      return "${tmpLine}<br>"
   }
 
   // This function will keep the format if you have bold italic text and regular bold/italic text
@@ -114,6 +114,30 @@ class WikiToHtml{
     return line + "<br>"
   }
 
+  private String CleanUpText(String text){
+    def patterns = [
+      /\*\*.*\*\*/,      // Bold
+      /\/\/.*\/\//,      // Italic
+      /\_\_.*\_\_/,      // Underline
+      /\-\-.*\-\-/,      // Strikethrough
+      /\[.*\|.*\]/,      // Links
+      /\!.+\!/,          // Images
+      /\{code(:[^\}]*)?\}[\s\S]*?\{code\}/,  // Code blocks
+      /\{quote\}[\s\S]*?\{quote\}/,          // Block quotes
+      /\{panel:[^\}]+\}[\s\S]*?\{panel\}/,   // Panel
+      /^h[1-6]\..*/,     // Headings (h1. to h6.)
+    ]
+    
+    // Check if any pattern matches the input
+    for (pattern in patterns) {
+      def match = text =~ pattern
+      if (match.find()) {
+        return match[0]
+      }
+    }
+    return ""
+  }
+
   public def wikiToHTML(String wiki){
     def splitted = wiki.split(System.lineSeparator())
     String text = ""
@@ -122,15 +146,18 @@ class WikiToHtml{
 
     //throw new Exception("${splitted}")
     while(index < splitted.size()){
-      
       def lineResult = processList(splitted, index)
       index = lineResult.index
       def appender = lineResult.value
-      
+      if(index == splitted.size() -1){
+        
+      }
       String headerResult = processHeader(splitted[index])
       if(headerResult){
         appender += headerResult
-        index++  // Increment the index to skip the header line in the next loop iteration
+        if(index != splitted.size() -1){
+          index++  // Increment the index to skip the header line in the next loop iteration
+        }
       }
       
       // Process URLs separately to ensure they don't get duplicated in text output
@@ -148,15 +175,16 @@ class WikiToHtml{
         appender = appender.replace(appender,userMention)
       }
 
-      if(appender.isEmpty())
+      if (appender.isEmpty() && index != splitted.size() -1)
         text += splitted[index] + "<br>" 
       else
         text += appender
 
       index++
     }
-    // This will set the color if there are color atributes.
-    text = text.replaceAll(/\{color:#([0-9a-fA-F]{6})\}(.*?)\{color\}/, "<span style=\"color:#\$1\">\$2</span>")
+    // This will set the color if there are color atributes. 
+    // The CleanUpText function will find any unhandeled wiki tags and the replace will remove it.
+    text = text.replaceAll(/\{color:#([0-9a-fA-F]{6})\}(.*?)\{color\}/, "<span style=\"color:#\$1\">\$2</span>").replaceAll(CleanUpText(text.split('<br>')[-1]), "")
     return text
   }
 }
