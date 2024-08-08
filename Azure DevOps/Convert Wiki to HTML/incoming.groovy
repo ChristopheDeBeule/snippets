@@ -1,7 +1,3 @@
-import java.sql.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
 class lineProcessResult{
   int index
   String value
@@ -37,7 +33,7 @@ class WikiToHtml{
       break
 
       def tmp = match.group(2)
-      tmp = processBoldAndItalicText(tmp)
+      tmp = processText(tmp)
       tmp = processUrl(tmp, true)
       listItems += "<li>${tmp}</li>"
       i++
@@ -78,13 +74,26 @@ class WikiToHtml{
   }
 
   // This function will keep the format if you have bold italic text and regular bold/italic text
-  private def processBoldAndItalicText(String line) {
+  private def processText(String line) {
     def regex = /\[~accountid:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\]/ 
 
     // Process bold text
     line = replaceText(line, /\*(.+?)\*/, '<strong>', '</strong>')
     // Process italic text
     line = replaceText(line, /_(.+?)_/, '<em>', '</em>')
+    // Process Strike throug
+    line = replaceText(line, /-(.+?)-/, '<strike>', '</strike>')
+    // Process SubScript 
+    line = replaceText(line, /~(.+?)~/, '<sub>', '</sub>')
+    // Process Underline 
+    line = replaceText(line, /\+(.+?)\+/, '<u>', '</u>')
+    // Process SuprtScript 
+    line = replaceText(line, /\^(.+?)\^/, '<sup>', '</sup>')
+    // Process Code Block 
+    line = replaceText(line, /\{noformat\}(.+?)\{noformat\}/, '<pre><code>', '</code></pre>')
+    // Process Small Code Block 
+    line = replaceText(line, /\{\{(.+?)\}\}/, '<span style="background-color:rgb(230, 230, 230); border-radius: 3px; padding: 2px;">', '</span>')
+
     def matches = line =~ regex
     if(matches.find()) return "<br>"
     return line
@@ -147,7 +156,7 @@ class WikiToHtml{
       } else {
         // Only process bold and italic text if the line is not a URL
         if(index != splitted.size())
-          appender += processBoldAndItalicText(splitted[index])
+          appender += processText(splitted[index])
       }
 
       if(index != splitted.size())
@@ -169,7 +178,6 @@ class WikiToHtml{
     return text
   }
 }
-
 
 WikiToHtml convert = new WikiToHtml(nodeHelper, workItem.project?.name)
 
