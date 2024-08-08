@@ -1,3 +1,7 @@
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 class lineProcessResult{
   int index
   String value
@@ -113,69 +117,47 @@ class WikiToHtml{
     } 
     return line + "<br>"
   }
-
-  private String CleanUpText(String text){
-    def patterns = [
-      /\*\*.*\*\*/,      // Bold
-      /\/\/.*\/\//,      // Italic
-      /\_\_.*\_\_/,      // Underline
-      /\-\-.*\-\-/,      // Strikethrough
-      /\[.*\|.*\]/,      // Links
-      /\!.+\!/,          // Images
-      /\{code(:[^\}]*)?\}[\s\S]*?\{code\}/,  // Code blocks
-      /\{quote\}[\s\S]*?\{quote\}/,          // Block quotes
-      /\{panel:[^\}]+\}[\s\S]*?\{panel\}/,   // Panel
-      /^h[1-6]\..*/,     // Headings (h1. to h6.)
-    ]
-    
-    // Check if any pattern matches the input
-    for (pattern in patterns) {
-      def match = text =~ pattern
-      if (match.find()) {
-        return match[0]
-      }
-    }
-    return ""
-  }
-
+  
   public def wikiToHTML(String wiki){
     def splitted = wiki.split(System.lineSeparator())
     String text = ""
     boolean check = true
     int index = 0
+    String headerResult = ""
+    String newUrl = ""
+    String userMention = ""
 
     //throw new Exception("${splitted}")
     while(index < splitted.size()){
       def lineResult = processList(splitted, index)
       index = lineResult.index
       def appender = lineResult.value
-      if(index == splitted.size() -1){
-        
-      }
-      String headerResult = processHeader(splitted[index])
+      if(index != splitted.size())
+        headerResult = processHeader(splitted[index])
       if(headerResult){
         appender += headerResult
-        if(index != splitted.size() -1){
-          index++  // Increment the index to skip the header line in the next loop iteration
-        }
+        index++  // Increment the index to skip the header line in the next loop iteration
       }
       
       // Process URLs separately to ensure they don't get duplicated in text output
-      String newUrl = processUrl(splitted[index], false)
+      if(index != splitted.size())
+        newUrl = processUrl(splitted[index], false)
       if (newUrl){
         appender += newUrl
         //index++  // Increment the index to skip the URL line in the next loop iteration // DEBUG
       } else {
         // Only process bold and italic text if the line is not a URL
-        appender += processBoldAndItalicText(splitted[index])
+        if(index != splitted.size())
+          appender += processBoldAndItalicText(splitted[index])
       }
 
-      String userMention = processUserMention(splitted[index])
+      if(index != splitted.size())
+        userMention = processUserMention(splitted[index])
       if (userMention){
         appender = appender.replace(appender,userMention)
       }
 
-      if (appender.isEmpty() && index != splitted.size() -1)
+      if (appender.isEmpty() && index != splitted.size())
         text += splitted[index] + "<br>" 
       else
         text += appender
@@ -184,7 +166,7 @@ class WikiToHtml{
     }
     // This will set the color if there are color atributes. 
     // The CleanUpText function will find any unhandeled wiki tags and the replace will remove it.
-    text = text.replaceAll(/\{color:#([0-9a-fA-F]{6})\}(.*?)\{color\}/, "<span style=\"color:#\$1\">\$2</span>").replaceAll(CleanUpText(text.split('<br>')[-1]), "")
+    text = text.replaceAll(/\{color:#([0-9a-fA-F]{6})\}(.*?)\{color\}/, "<span style=\"color:#\$1\">\$2</span>")
     return text
   }
 }
