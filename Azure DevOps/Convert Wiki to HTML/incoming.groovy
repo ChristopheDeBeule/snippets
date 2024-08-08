@@ -192,6 +192,16 @@ class WikiToHtml{
 
 WikiToHtml convert = new WikiToHtml(nodeHelper, workItem.project?.name)
 
+// on the first sync its possible the user mention will not be set correctly
+// Therfore we need to create the new workItem first and set the description, comment or your string.
+
+if(firstSync){
+  workItem.projectKey = "FOO"
+  issue.typeName = "Task"
+  issue.summary = replica.summary
+  store(issue) // creates the issue with only project, type and summary
+}
+
 // Description or custom rich text fields..
 workItem.description  = convert.wikiToHTML(replica.description)
 

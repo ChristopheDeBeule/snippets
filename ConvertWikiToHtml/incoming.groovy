@@ -126,6 +126,16 @@ class WikiToHtml{
   }
 }
 
+// on the first sync its possible the user mention will not be set correctly
+// Therfore we need to create the new workItem first and set the description, comment or your string.
+
+if(firstSync){
+  issue.projectKey = "FOO"
+  issue.typeName = "Task"
+  issue.summary = "Hello there"
+  store(issue) // creates the issue with only project, type and summary
+}
+
 // Create a new WikiToHtml obect and call the wikiToHTML method.
 WikiToHtml convert = new WikiToHtml()
 def convertedString = convert.wikiToHTML(yourString)
