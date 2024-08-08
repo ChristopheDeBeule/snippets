@@ -144,7 +144,6 @@ class WikiToHtml{
         newUrl = processUrl(splitted[index], false)
       if (newUrl){
         appender += newUrl
-        //index++  // Increment the index to skip the URL line in the next loop iteration // DEBUG
       } else {
         // Only process bold and italic text if the line is not a URL
         if(index != splitted.size())
