@@ -1,7 +1,7 @@
 def remoteIssueUrn = replica.customFields."CF Name"?.value 
 // This will check if there is a remote issue URN so we can do a replace otherwise you do a replace on a null object which can cause errors.
 if (remoteIssueUrn){
-    remoteIssueUrn = remoteIssueUrn.replaceAll("\\s","")
+    remoteIssueUrn = remoteIssueUrn.trim()
 }
 // removes whitespaces in string 
 if(remoteIssueUrn && firstSync){
