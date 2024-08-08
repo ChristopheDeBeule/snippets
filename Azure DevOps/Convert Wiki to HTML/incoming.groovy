@@ -103,6 +103,9 @@ class WikiToHtml{
   }
 
   private def replaceText(String text, def regex, String startTagTemplate, String endTag) {
+
+    if (text.contains('{noformat}'))
+      text = text.replaceAll(" newLn ", "<br>")
     // Define the regex pattern to extract the color code
     def colorPattern = ~/\{color:#([0-9A-Fa-f]{6})\}/
     def colorMatcher = text =~ colorPattern
@@ -139,9 +142,19 @@ class WikiToHtml{
     } 
     return line + "<br>"
   }
+
+  private def splitText(String text) {
+    def pattern = /\{noformat\}([\s\S]*?)\{noformat\}/
+
+    def modifiedText = text.replaceAll(pattern) { match ->
+      def codeBlock = match[1].replaceAll('\n', ' newLn ')
+      return "{noformat}${codeBlock}{noformat}"
+    }
+    modifiedText = modifiedText.split(System.lineSeparator())
+  }
   
   public def wikiToHTML(String wiki){
-    def splitted = wiki.split(System.lineSeparator())
+    def splitted = splitText(wiki)
     String text = ""
     boolean check = true
     int index = 0
