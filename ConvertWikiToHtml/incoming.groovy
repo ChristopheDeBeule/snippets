@@ -81,8 +81,8 @@ class WikiToHtml{
     line = replaceText(line, /\*(.+?)\*/, '<strong>', '</strong>')
     // Process italic text
     line = replaceText(line, /_(.+?)_/, '<em>', '</em>')
-    // Process Strike throug
-    line = replaceText(line, /-(.+?)-/, '<strike>', '</strike>')
+    // Process Strike throug (Ignore dates)
+    line = replaceText(line, /(?<!\d{4})-(?!\d{2}-\d{2})(.+?)-(?!\d{2}-\d{2})/, '<strike>', '</strike>')
     // Process SubScript 
     line = replaceText(line, /~(.+?)~/, '<sub>', '</sub>')
     // Process Underline 
@@ -93,13 +93,26 @@ class WikiToHtml{
     line = replaceText(line, /\{noformat\}(.+?)\{noformat\}/, '<pre><code>', '</code></pre>')
     // Process Small Code Block 
     line = replaceText(line, /\{\{(.+?)\}\}/, '<span style="background-color:rgb(230, 230, 230); border-radius: 3px; padding: 2px;">', '</span>')
+    // Process status
+
+    line = replaceText(line, /\[(.+?)\]/, '<span style="background-color:#DYNAMIC_COLOR; color: #FFF; border-radius: 3px; padding: 2px;">', '</span>')
 
     def matches = line =~ regex
     if(matches.find()) return "<br>"
     return line
   }
 
-  private def replaceText(String text, def regex, String startTag, String endTag) {
+  private def replaceText(String text, def regex, String startTagTemplate, String endTag) {
+    // Define the regex pattern to extract the color code
+    def colorPattern = ~/\{color:#([0-9A-Fa-f]{6})\}/
+    def colorMatcher = text =~ colorPattern
+    
+    // Extract the color code
+    String colorCode = colorMatcher ? colorMatcher[0][1] : "FFFFFF" // Default to white if no color found
+    
+    // Update the start tag with the extracted color code
+    String startTag = startTagTemplate.replace('DYNAMIC_COLOR', colorCode)
+
     def matcher = text =~ regex
     StringBuffer sb = new StringBuffer()
 
