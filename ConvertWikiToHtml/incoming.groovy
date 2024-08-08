@@ -9,6 +9,15 @@ class lineProcessResult{
 }
 
 class WikiToHtml{
+
+  def helper;
+  def projectName;
+
+  public def WikiToHtml(def helper, def projectName){
+    this.helper = helper;
+    this.projectName = projectName;
+  }
+
   private def processList(def lines, int index) {
     def regex = /^\s*([#*]) \s*(.*)$/
     def matches = lines[index] =~ regex
@@ -24,7 +33,7 @@ class WikiToHtml{
       break
 
       def tmp = match.group(2)
-      tmp = processBoldAndItalicText(tmp)
+      tmp = processText(tmp)
       tmp = processUrl(tmp, true)
       listItems += "<li>${tmp}</li>"
       i++
@@ -39,14 +48,14 @@ class WikiToHtml{
     def matches = line =~ regex
 
     if(!matches.find())
-    return ""
+      return ""
 
     return "<h${matches.group(1)}>${matches.group(2)}</h${matches.group(1)}><br>"
   }
 
   private def processUrl(String line, Boolean isList){
     // Separate handling for links to ensure they match the correct format
-    def regex = /\[(.*?)\s*\|\s*(http?:\/\/[^\s\]]+)\]/
+    def regex = /\[(.*?)\s*\|\s*(https?:\/\/[^\s\]]+)\]/
     def matches = line =~ regex
 
     //Check if the pattern found a match 
@@ -60,24 +69,40 @@ class WikiToHtml{
 
     if(isList)
       return tmpLine
-    
-    return "${tmpLine}<br>"
+    else
+      return "${tmpLine}<br>"
   }
 
-
   // This function will keep the format if you have bold italic text and regular bold/italic text
-  private def processBoldAndItalicText(String line) {
+  private def processText(String line) {
+    def regex = /\[~accountid:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\]/ 
+
     // Process bold text
     line = replaceText(line, /\*(.+?)\*/, '<strong>', '</strong>')
     // Process italic text
     line = replaceText(line, /_(.+?)_/, '<em>', '</em>')
+    // Process Strike throug
+    line = replaceText(line, /-(.+?)-/, '<strike>', '</strike>')
+    // Process SubScript 
+    line = replaceText(line, /~(.+?)~/, '<sub>', '</sub>')
+    // Process Underline 
+    line = replaceText(line, /\+(.+?)\+/, '<u>', '</u>')
+    // Process SuprtScript 
+    line = replaceText(line, /\^(.+?)\^/, '<sup>', '</sup>')
+    // Process Code Block 
+    line = replaceText(line, /\{noformat\}(.+?)\{noformat\}/, '<pre><code>', '</code></pre>')
+    // Process Small Code Block 
+    line = replaceText(line, /\{\{(.+?)\}\}/, '<span style="background-color:rgb(230, 230, 230); border-radius: 3px; padding: 2px;">', '</span>')
 
+    def matches = line =~ regex
+    if(matches.find()) return "<br>"
     return line
   }
 
   private def replaceText(String text, def regex, String startTag, String endTag) {
     def matcher = text =~ regex
     StringBuffer sb = new StringBuffer()
+
     while (matcher.find()) {
       matcher.appendReplacement(sb, "${startTag}${matcher.group(1)}${endTag}")
     }
@@ -85,42 +110,70 @@ class WikiToHtml{
     return sb.toString()
   }
 
-
+  private String processUserMention(String line){
+    def regex = /\[~accountid:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\|([^\]]+)\]/
+    def matches = line =~ regex
+    if(!matches.find()) 
+      return ""
+    
+    matches.each {
+      def user = this.helper.getUserByEmail(matches.group(1), this.projectName) 
+      if(!user){
+        line = line.replace(matches.group(0), "@${matches.group(2)}") // 1 = email, 2 = user name
+      }else{ 
+        line = line.replace(matches.group(0), "<a href=\"#\" data-vss-mention=\"version:2.0,"+user?.key+"\"></a>")
+      }
+    } 
+    return line + "<br>"
+  }
+  
   public def wikiToHTML(String wiki){
     def splitted = wiki.split(System.lineSeparator())
     String text = ""
-
+    boolean check = true
     int index = 0
+    String headerResult = ""
+    String newUrl = ""
+    String userMention = ""
 
+    //throw new Exception("${splitted}")
     while(index < splitted.size()){
       def lineResult = processList(splitted, index)
       index = lineResult.index
       def appender = lineResult.value
-    
-      String headerResult = processHeader(splitted[index])
+      if(index != splitted.size())
+        headerResult = processHeader(splitted[index])
       if(headerResult){
         appender += headerResult
         index++  // Increment the index to skip the header line in the next loop iteration
       }
-    
+      
       // Process URLs separately to ensure they don't get duplicated in text output
-      String newUrl = processUrl(splitted[index], false)
+      if(index != splitted.size())
+        newUrl = processUrl(splitted[index], false)
       if (newUrl){
         appender += newUrl
-        index++  // Increment the index to skip the URL line in the next loop iteration
       } else {
         // Only process bold and italic text if the line is not a URL
-         appender += processBoldAndItalicText(splitted[index])
+        if(index != splitted.size())
+          appender += processText(splitted[index])
       }
 
-      if(appender.isEmpty())
+      if(index != splitted.size())
+        userMention = processUserMention(splitted[index])
+      if (userMention){
+        appender = appender.replace(appender,userMention)
+      }
+
+      if (appender.isEmpty() && index != splitted.size())
         text += splitted[index] + "<br>" 
       else
         text += appender
 
       index++
     }
-    // This will set the color if there are color atributes.
+    // This will set the color if there are color atributes. 
+    // The CleanUpText function will find any unhandeled wiki tags and the replace will remove it.
     text = text.replaceAll(/\{color:#([0-9a-fA-F]{6})\}(.*?)\{color\}/, "<span style=\"color:#\$1\">\$2</span>")
     return text
   }
