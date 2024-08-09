@@ -33,8 +33,9 @@ class WikiToHtml{
       break
 
       def tmp = match.group(2)
-      tmp = processText(tmp)
       tmp = processUrl(tmp, true)
+      tmp = processText(tmp)
+      
       listItems += "<li>${tmp}</li>"
       i++
     }
@@ -63,7 +64,6 @@ class WikiToHtml{
       // When no match is found we return the Original line if the isList is true otherwise we return an empty String
       return isList ? line : ""
     }
-
     def tmpLine = line.replace(matches.group(0), "<a href=\"${matches.group(2)}\">${matches.group(1)}</a>").trim()
     // We add a line break if it's not a list item, list items don't need a line break.
 
@@ -71,6 +71,31 @@ class WikiToHtml{
       return tmpLine
     else
       return "${tmpLine}<br>"
+  }
+
+  private def darkenColor(hexColor, percentage = 0.4) {
+    // Remove the # if it's there
+    hexColor = hexColor.replace("#", "")
+
+    // Parse the hex color into RGB components
+    def r = Integer.parseInt(hexColor[0..1], 16)
+    def g = Integer.parseInt(hexColor[2..3], 16)
+    def b = Integer.parseInt(hexColor[4..5], 16)
+
+    // Calculate the new RGB values, darkened by the given percentage
+    r = (r * (1 - percentage)) as int
+    g = (g * (1 - percentage)) as int
+    b = (b * (1 - percentage)) as int
+
+    // Ensure RGB values are within the 0-255 range
+    r = Math.max(0, Math.min(255, r))
+    g = Math.max(0, Math.min(255, g))
+    b = Math.max(0, Math.min(255, b))
+
+    // Convert the RGB values back to a hex string
+    def darkenedHexColor = String.format("#%02X%02X%02X", r, g, b)
+
+    return darkenedHexColor
   }
 
   // This function will keep the format if you have bold italic text and regular bold/italic text
@@ -94,8 +119,7 @@ class WikiToHtml{
     // Process Small Code Block 
     line = replaceText(line, /\{\{(.+?)\}\}/, '<span style="background-color:rgb(230, 230, 230); border-radius: 3px; padding: 2px;">', '</span>')
     // Process status
-
-    line = replaceText(line, /\[(.+?)\]/, '<span style="background-color:#DYNAMIC_COLOR; color: #FFF; border-radius: 3px; padding: 2px;">', '</span>')
+    line = replaceText(line, /\[(?!\|)(.+?)\]/, '<span style="background-color:#DYNAMIC_BG_COLOR; color: DYNAMIC_COLOR; border-radius: 3px; padding: 2px;">', '</span>')
 
     def matches = line =~ regex
     if(matches.find()) return "<br>"
@@ -107,14 +131,14 @@ class WikiToHtml{
     if (text.contains('{noformat}'))
       text = text.replaceAll(" newLn ", "<br>")
     // Define the regex pattern to extract the color code
-    def colorPattern = ~/\{color:#([0-9A-Fa-f]{6})\}/
+    def colorPattern = /\{color:#([0-9A-Fa-f]{6})\}/
     def colorMatcher = text =~ colorPattern
-    
+
     // Extract the color code
     String colorCode = colorMatcher ? colorMatcher[0][1] : "FFFFFF" // Default to white if no color found
     
     // Update the start tag with the extracted color code
-    String startTag = startTagTemplate.replace('DYNAMIC_COLOR', colorCode)
+    String startTag = startTagTemplate.replace('DYNAMIC_BG_COLOR', colorCode).replace('DYNAMIC_COLOR', darkenColor(colorCode))
 
     def matcher = text =~ regex
     StringBuffer sb = new StringBuffer()
@@ -154,6 +178,7 @@ class WikiToHtml{
   }
   
   public def wikiToHTML(String wiki){
+    //throw new Exception(wiki.replaceAll('\n',"<br>"))
     def splitted = splitText(wiki)
     String text = ""
     boolean check = true
@@ -162,7 +187,6 @@ class WikiToHtml{
     String newUrl = ""
     String userMention = ""
 
-    //throw new Exception("${splitted}")
     while(index < splitted.size()){
       def lineResult = processList(splitted, index)
       index = lineResult.index
@@ -180,7 +204,6 @@ class WikiToHtml{
       if (newUrl){
         appender += newUrl
       } else {
-        // Only process bold and italic text if the line is not a URL
         if(index != splitted.size())
           appender += processText(splitted[index])
       }
