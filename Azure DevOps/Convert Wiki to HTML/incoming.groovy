@@ -73,6 +73,30 @@ class WikiToHtml{
       return "${tmpLine}<br>"
   }
 
+  private def processCodeBlock(String line, Boolean numeric = false) {
+    // Regex to find the content between {noformat} tags
+    def regex = /\{noformat\}(.+?)\{noformat\}/
+    def matches = line =~ regex
+    
+    if (!matches.find()) {
+      return ""
+    }
+    
+    // Get the matched content and replace `newLn` with <br>, then clean up multiple <br> tags
+    def content = matches.group(1).replaceAll("newLn", "<br>")
+    if(numeric){
+      // Add numeric lines to the code block (uncomment if you want numbers in your code block)
+      def splitLines = content.split('<br>')
+      content = ""
+      for(int i = 1; i < splitLines.size() +1; i++){
+        content += "${i} ${splitLines[i-1]}\n"
+      }
+    }
+    
+    // Wrap the numbered content in <code><pre> tags and return
+    return "<code><pre>${content}</pre></code>"
+  }
+
   private def darkenColor(hexColor, percentage = 0.4) {
     // Remove the # if it's there
     hexColor = hexColor.replace("#", "")
@@ -114,8 +138,6 @@ class WikiToHtml{
     line = replaceText(line, /\+(.+?)\+/, '<u>', '</u>')
     // Process SuprtScript 
     line = replaceText(line, /\^(.+?)\^/, '<sup>', '</sup>')
-    // Process Code Block 
-    line = replaceText(line, /\{noformat\}(.+?)\{noformat\}/, '<pre><code>', '</code></pre>')
     // Process Small Code Block 
     line = replaceText(line, /\{\{(.+?)\}\}/, '<span style="background-color:rgb(230, 230, 230); border-radius: 3px; padding: 2px;">', '</span>')
     // Process status
@@ -127,9 +149,7 @@ class WikiToHtml{
   }
 
   private def replaceText(String text, def regex, String startTagTemplate, String endTag) {
-
-    if (text.contains('{noformat}'))
-      text = text.replaceAll(" newLn ", "<br>")
+    // This is done for wiki status sync
     // Define the regex pattern to extract the color code
     def colorPattern = /\{color:#([0-9A-Fa-f]{6})\}/
     def colorMatcher = text =~ colorPattern
@@ -168,24 +188,26 @@ class WikiToHtml{
   }
 
   private def splitText(String text) {
+    // replace all \n with newLn so we don't change the code block format.
     def pattern = /\{noformat\}([\s\S]*?)\{noformat\}/
 
     def modifiedText = text.replaceAll(pattern) { match ->
-      def codeBlock = match[1].replaceAll('\n', ' newLn ')
+      def codeBlock = match[1].replaceAll('\n', 'newLn')
       return "{noformat}${codeBlock}{noformat}"
     }
     modifiedText = modifiedText.split(System.lineSeparator())
   }
   
   public def wikiToHTML(String wiki){
-    //throw new Exception(wiki.replaceAll('\n',"<br>"))
     def splitted = splitText(wiki)
     String text = ""
     boolean check = true
     int index = 0
+    
     String headerResult = ""
     String newUrl = ""
     String userMention = ""
+    String codeBlock = ""
 
     while(index < splitted.size()){
       def lineResult = processList(splitted, index)
@@ -206,6 +228,12 @@ class WikiToHtml{
       } else {
         if(index != splitted.size())
           appender += processText(splitted[index])
+      }
+      if(index != splitted.size()){
+        codeBlock = processCodeBlock(splitted[index])
+      }
+      if(codeBlock){
+        appender = appender.replace(appender, codeBlock)
       }
 
       if(index != splitted.size())
