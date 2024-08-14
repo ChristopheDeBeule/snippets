@@ -1,3 +1,10 @@
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+
+
+import groovy.json.JsonSlurper
 class lineProcessResult{
   int index
   String value
@@ -10,12 +17,16 @@ class lineProcessResult{
 
 class WikiToHtml{
 
-  def helper;
-  def projectName;
+  def nodeHelper;
+  def workItem;
+  def replica;
+  def syncHelper;
 
-  public def WikiToHtml(def helper, def projectName){
-    this.helper = helper;
-    this.projectName = projectName;
+  public def WikiToHtml(def nodeHelper, def syncHelper, def workItem, def replica){
+    this.nodeHelper = nodeHelper;
+    this.syncHelper = syncHelper;
+    this.workItem = workItem;
+    this.replica = replica;
   }
 
   private def processList(def lines, int index) {
@@ -73,6 +84,28 @@ class WikiToHtml{
       return "${tmpLine}<br>"
   }
 
+  private def processInlineImage(String line){
+    def supportedFileTypes = ['png', 'jpeg', 'jpg', 'webp']
+    def regex = /!(.+\|.+)!/
+    def matches = line =~ regex
+  
+    if (!matches.find()) {
+      return ""
+    }
+
+    def fileName = matches.group(1).split("\\|")[0]
+    Boolean isSupported = supportedFileTypes.any {ext ->
+      fileName.toLowerCase().endsWith(".${ext}")
+    }
+    // TODO: find a good way to handle non suported file types
+    if (!isSupported){
+      return fileName
+    }
+
+    def attId = this.workItem.attachments.find{ it.filename?.equals(fileName)}?.idStr
+    return "<img src=\"${this.syncHelper.getTrackerUrl()}/${this.workItem.projectKey}/_apis/wit/attachments/${attId}?fileName=${fileName}\" />"
+  }
+
   private def processCodeBlock(String line, Boolean numeric = false) {
     // Regex to find the content between {noformat} tags
     def regex = /\{noformat\}(.+?)\{noformat\}/
@@ -83,7 +116,7 @@ class WikiToHtml{
     }
     
     // Get the matched content and replace `newLn` with <br>, then clean up multiple <br> tags
-    def content = matches.group(1).replaceAll("newLn", "<br>")
+    def content = matches.group(1).replaceAll(" newLn ", "<br>")
     if(numeric){
       // Add numeric lines to the code block (uncomment if you want numbers in your code block)
       def splitLines = content.split('<br>')
@@ -125,7 +158,8 @@ class WikiToHtml{
   // This function will keep the format if you have bold italic text and regular bold/italic text
   private def processText(String line) {
     def regex = /\[~accountid:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\]/ 
-
+    def rg2 = /!(.+\|.+)!/
+    def mtch = line =~ rg2
     // Process bold text
     line = replaceText(line, /\*(.+?)\*/, '<strong>', '</strong>')
     // Process italic text
@@ -151,6 +185,7 @@ class WikiToHtml{
   private def replaceText(String text, def regex, String startTagTemplate, String endTag) {
     // This is done for wiki status sync
     // Define the regex pattern to extract the color code
+    if (text =~ /!(.+\|.+)!/) return text
     def colorPattern = /\{color:#([0-9A-Fa-f]{6})\}/
     def colorMatcher = text =~ colorPattern
 
@@ -177,7 +212,7 @@ class WikiToHtml{
       return ""
     
     matches.each {
-      def user = this.helper.getUserByEmail(matches.group(1), this.projectName) 
+      def user = this.nodeHelper.getUserByEmail(matches.group(1), this.workItem.projectKey) 
       if(!user){
         line = line.replace(matches.group(0), "@${matches.group(2)}") // 1 = email, 2 = user name
       }else{ 
@@ -192,7 +227,7 @@ class WikiToHtml{
     def pattern = /\{noformat\}([\s\S]*?)\{noformat\}/
 
     def modifiedText = text.replaceAll(pattern) { match ->
-      def codeBlock = match[1].replaceAll('\n', 'newLn')
+      def codeBlock = match[1].replaceAll('\n', ' newLn ')
       return "{noformat}${codeBlock}{noformat}"
     }
     modifiedText = modifiedText.split(System.lineSeparator())
@@ -208,6 +243,7 @@ class WikiToHtml{
     String newUrl = ""
     String userMention = ""
     String codeBlock = ""
+    String image = ""
 
     while(index < splitted.size()){
       def lineResult = processList(splitted, index)
@@ -229,6 +265,14 @@ class WikiToHtml{
         if(index != splitted.size())
           appender += processText(splitted[index])
       }
+
+      if(index != splitted.size()){
+        image = processInlineImage(splitted[index])
+      }
+      if(image){
+        appender = appender.replace(appender, image)
+      }
+
       if(index != splitted.size()){
         codeBlock = processCodeBlock(splitted[index])
       }
@@ -256,24 +300,22 @@ class WikiToHtml{
   }
 }
 
-WikiToHtml convert = new WikiToHtml(nodeHelper, workItem.project?.name)
-
-// on the first sync its possible the user mention will not be set correctly
-// Therfore we need to create the new workItem first and set the description, comment or your string.
-
 if(firstSync){
-  workItem.projectKey = "FOO"
-  issue.typeName = "Task"
-  issue.summary = replica.summary
-  store(issue) // creates the issue with only project, type and summary
+   // Set type name from source entity, if not found set a default
+  workItem.projectKey  =  "Your ADO project name"
+  workItem.typeName = nodeHelper.getIssueType(replica.type?.name)?.name ?: "Task";
+  workItem.summary      = replica.summary
+  store(issue)
 }
 
-// Description or custom rich text fields..
+workItem.summary      = replica.summary
+workItem.labels       = replica.labels
+workItem.attachments  = attachmentHelper.mergeAttachments(workItem, replica)
+// Store after the attachments so the attachment Id will be created localy
+store(issue)
+WikiToHtml convert = new WikiToHtml(nodeHelper, syncHelper, workItem, replica)
+
 workItem.description  = convert.wikiToHTML(replica.description)
-
-
-// Comment handling
-workItem.description  = replica.description
 workItem.comments     = commentHelper.mergeComments(workItem, replica, {c ->
   c.body = convert.wikiToHTML(c.body)
   c
