@@ -90,11 +90,10 @@ class WikiToHtml{
     Boolean isSupported = supportedFileTypes.any {ext ->
       fileName.toLowerCase().endsWith(".${ext}")
     }
-    // TODO: find a good way to handle non suported file types
-    if (!isSupported){
-      return fileName
-    }
 
+    if (!isSupported){
+      return "<img src=\"${this.syncHelper.getTrackerUrl()}/${this.workItem.projectKey}/_apis/wit/attachments/${fileName}?fileName=${fileName}\" /> ${fileName} does not have the right file format."
+    }
     def attId = this.workItem.attachments.find{ it.filename?.equals(fileName)}?.idStr
     return "<img src=\"${this.syncHelper.getTrackerUrl()}/${this.workItem.projectKey}/_apis/wit/attachments/${attId}?fileName=${fileName}\" />"
   }
