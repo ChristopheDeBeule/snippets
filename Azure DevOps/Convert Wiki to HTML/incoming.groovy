@@ -1,10 +1,3 @@
-import java.sql.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-
-
-import groovy.json.JsonSlurper
 class lineProcessResult{
   int index
   String value
