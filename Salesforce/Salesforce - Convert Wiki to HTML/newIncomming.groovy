@@ -10,10 +10,16 @@ class lineProcessResult{
 
 class WikiToHtml{
 
-  def helper;
+  def nodeHelper;
+  def entity;
+  def replica;
+  def syncHelper;
 
-  public def WikiToHtml(def helper) {
-    this.helper = helper;
+  public def WikiToHtml(def nodeHelper, def syncHelper, def entity, def replica) {
+    this.nodeHelper = nodeHelper;
+    this.syncHelper = syncHelper;
+    this.entity = entity;
+    this.replica = replica;
   }
 
   private def processList(def lines, int index) {
@@ -108,16 +114,17 @@ class WikiToHtml{
 
   // New Inline image
   // TODO: instead of a link add the image inline dynamically (SF can't handle this)
-  private def processImage(String line, def attachments, Boolean returnHtml = true){
+  private def processImage(String line, Boolean returnHtml = true){
     def regex = /(?:!|alt=\")([^|"]+)/
     def matches = line =~ regex
-    def baseUrl = this.helper.getTrackerUrl()
+    def baseUrl = this.syncHelper.getTrackerUrl()
 
     if(!matches.find())
       return ""
-
+    
     def alt = matches.group(1) // This return the image name
-    def allAttachments = fetchInfo(attachments.toString())
+    def allAttachments = fetchInfo(this.entity.attachments.toString())
+
     def tmp = ""
     allAttachments.each{attachment ->
       if(attachment.filename == alt){
@@ -125,6 +132,7 @@ class WikiToHtml{
         return
       }
     }
+
     if (returnHtml){
       return "<a href=\"${baseUrl}/lightning/r/ContentDocument/${tmp}/view\">${alt}</a>"
     }else{
@@ -135,14 +143,17 @@ class WikiToHtml{
   // This is for system fields
   // TODO: Fix raw data, in the comments and description Salesfroce shows the raw data instead (HTML tags are visible)
   // This method only append and applies changed on the images
-  public def setInlineImage(String wiki, attachments = null){
+  public def setInlineImage(String wiki){
     if(!wiki) return ""
 
     def lines = wiki.split('\n')
+    def processedImage = ""
     def index = 0
     def appender = ""
     while(index < lines.size()){
-      def processedImage = processImage(lines[index], attachments, false)
+      if(index != lines.size()){
+        processedImage = processImage(lines[index], false)
+      }
       if(processedImage){
         appender += processedImage + '\n'
         index++
@@ -158,7 +169,7 @@ class WikiToHtml{
 
 
   // This works perfect on Custom rich text fields
-  public def wikiToHTML(String wiki, attachments = null){
+  public def wikiToHTML(String wiki){
 
     if(!wiki) return ""
 
@@ -177,7 +188,7 @@ class WikiToHtml{
         index++  // Increment the index to skip the header line in the next loop iteration
       }
 
-      String imageResult = processImage(splitted[index], attachments)
+      String imageResult = processImage(splitted[index])
       if (imageResult) {
       	appender += imageResult
         splitted[index] = ""
@@ -209,19 +220,24 @@ if(firstSync){
   entity.entityType = "Case"
 }
 
-WikiToHtml convert = new WikiToHtml(syncHelper)
+
 
 if(entity.entityType == "Case"){
-  entity.Subject      = replica.summary  
+  if(firstSync){
+    entity.Subject      = replica.summary  
   
-  entity.Origin       = "Web"
-  entity.Status       = "New"
-  entity.comments     = commentHelper.mergeComments(entity, replica)
+    entity.Origin       = "Web"
+    entity.Status       = "New"
+     // we store the issue so it created the ID for the attachmentents
+     
+  }
   entity.attachments  = attachmentHelper.mergeAttachments(entity, replica)
-  store(entity) // we store the issue so it created the ID for the attachmentents
-  entity.Description  = convert.setInlineImage(replica.description,  entity.attachments)
-  entity.Multi_text__c  = convert.wikiToHTML(replica.description,  entity.attachments)
+  store(entity)
+
+  WikiToHtml convert = new WikiToHtml(nodeHelper, syncHelper, entity, replica)
+  entity.Description  = convert.setInlineImage(replica.description)
+  entity.Multi_text__c  = convert.wikiToHTML(replica.description)
    entity.comments     = commentHelper.mergeComments(entity, replica, {comment ->
-      comment.body = convert.setInlineImage(comment.body, entity.attachments)
+      comment.body = convert.setInlineImage(comment.body)
    })
 }
