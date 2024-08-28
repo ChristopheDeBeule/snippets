@@ -1,3 +1,4 @@
+// ADO CLient Class Start
 class AdoClient {
     // SCALA HELPERS
     private static <T> T await(scala.concurrent.Future<T> f) {
@@ -121,7 +122,7 @@ Please contact Exalate Support: """.toString() + response.body
               .url(sanitizedUrl)
               .withMethod(method)
             if (!allQueryParams.isEmpty()) {
-                def scalaQueryParams = scala.collection.JavaConversions.asScalaBuffer(
+                def scalaQueryParams = scala.collection.JavaConverters.asScalaBuffer(
                         queryParams
                                 .entrySet()
                                 .inject([] as List<scala.Tuple2<String, String>>) { List<scala.Tuple2<String, String>> result, kv ->
@@ -129,10 +130,10 @@ Please contact Exalate Support: """.toString() + response.body
                                     result
                                 }
                 )
-                request = request.withQueryString(scalaQueryParams)
+                request = request.withQueryString(scalaQueryParams.toSeq())
             }
             if (headers != null && !headers.isEmpty()) {
-                def scalaHeaders = scala.collection.JavaConversions.asScalaBuffer(
+                def scalaHeaders = scala.collection.JavaConverters.asScalaBuffer(
                         headers
                                 .entrySet()
                                 .inject([] as List<scala.Tuple2<String, String>>) { List<scala.Tuple2<String, String>> result, kv ->
@@ -140,7 +141,7 @@ Please contact Exalate Support: """.toString() + response.body
                                     result
                                 }
                 )
-                request = request.withHeaders(scalaHeaders)
+                request = request.withHeaders(scalaHeaders.toSeq())
             }
             if (body != null) {
                 def writable = play.api.libs.ws.WSBodyWritables$.MODULE$.writeableOf_String()
@@ -151,13 +152,16 @@ Please contact Exalate Support: """.toString() + response.body
             //debug.error("${play.api.libs.ws.WSAuthScheme$.class.code}")
             request = request.withAuth(token, token, play.api.libs.ws.WSAuthScheme$BASIC$.MODULE$)
             response = await(request.execute())
+
         } catch (Exception e) {
+
             throw new com.exalate.api.exception.IssueTrackerException(
                     """Unable to perform the request $method $path with body:```$body```,
                     please contact Exalate Support: """.toString() + e.message,
                     e
             )
         }
+        
         java.util.Map<String, List<String>> javaMap = [:]
         for (scala.Tuple2<String, scala.collection.Seq<String>> headerTuple : scala.collection.JavaConverters.bufferAsJavaListConverter(response.allHeaders().toBuffer()).asJava()) {
             def javaList = []
@@ -178,3 +182,4 @@ Please contact Exalate Support: """.toString() + response.body
         }
     }
 } 
+// ADO Client Class END
