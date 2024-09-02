@@ -1,3 +1,4 @@
+import java.util.regex.Matcher
 class lineProcessResult{
   int index
   String value
@@ -121,7 +122,7 @@ class WikiToHtml{
     // Wrap the numbered content in <code><pre> tags and return
     return "<code><pre>${content}</pre></code>"
   }
-
+  // Needed for Status in comments
   private def darkenColor(hexColor, percentage = 0.4) {
     // Remove the # if it's there
     hexColor = hexColor.replace("#", "")
@@ -191,7 +192,13 @@ class WikiToHtml{
     StringBuffer sb = new StringBuffer()
 
     while (matcher.find()) {
-      matcher.appendReplacement(sb, "${startTag}${matcher.group(1)}${endTag}")
+      try{
+        // This will take care of quote replacement
+        String replacement = Matcher.quoteReplacement("${startTag}${matcher.group(1)}${endTag}")
+        matcher.appendReplacement(sb, replacement)
+      }catch(Exception e){
+        throw new Exception(e)
+      }
     }
     matcher.appendTail(sb)
     return sb.toString()
@@ -294,7 +301,7 @@ class WikiToHtml{
 
 if(firstSync){
    // Set type name from source entity, if not found set a default
-  workItem.projectKey  =  "Your ADO project name"
+  workItem.projectKey  =  "Christophe"
   workItem.typeName = nodeHelper.getIssueType(replica.type?.name)?.name ?: "Task";
   workItem.summary      = replica.summary
   store(issue)
