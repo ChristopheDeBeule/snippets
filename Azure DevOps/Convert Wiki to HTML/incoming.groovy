@@ -100,29 +100,40 @@ class WikiToHtml{
   }
 
   private def processCodeBlock(String line, Boolean numeric = false) {
-    // Regex to find the content between {noformat} tags
-    def regex = /\{noformat\}(.+?)\{noformat\}/
-    def matches = line =~ regex
+    // Regex list to find content between {noformat} or {code:} tags
+    def patterns = [
+      /\{noformat\}(.+?)\{noformat\}/,
+      /\{code:[^}]*\}(.+?)\{code\}/
+    ]
+
+    def content = ""
     
-    if (!matches.find()) {
-      return ""
-    }
-    
-    // Get the matched content and replace `newLn` with <br>, then clean up multiple <br> tags
-    def content = matches.group(1).replaceAll(" newLn ", "<br>")
-    if(numeric){
-      // Add numeric lines to the code block (uncomment if you want numbers in your code block)
-      def splitLines = content.split('<br>')
-      content = ""
-      for(int i = 1; i < splitLines.size() +1; i++){
-        content += "${i} ${splitLines[i-1]}\n"
+    // Iterate over the patterns to find matches
+    patterns.each { pattern ->
+      def matches = line =~ pattern
+      if (matches.find()) {
+        content = matches.group(1).replaceAll(" newLn ", "<br>") // Replace newLn with <br>
       }
     }
     
-    // Wrap the numbered content in <code><pre> tags and return
+    // If no match was found, return an empty string
+    if (!content) {
+      return ""
+    }
+    
+    // If numeric is true, add line numbers to the code block
+    if (numeric) {
+      def splitLines = content.split('<br>')
+      content = ""
+      for (int i = 1; i <= splitLines.size(); i++) {
+          content += "${i} ${splitLines[i - 1]}\n"
+      }
+    }
+    
+    // Wrap the content in <code><pre> tags and return
     return "<code><pre>${content}</pre></code>"
   }
-  // Needed for Status in comments
+
   private def darkenColor(hexColor, percentage = 0.4) {
     // Remove the # if it's there
     hexColor = hexColor.replace("#", "")
@@ -194,8 +205,8 @@ class WikiToHtml{
     while (matcher.find()) {
       try{
         // This will take care of quote replacement
-        String replacement = Matcher.quoteReplacement("${startTag}${matcher.group(1)}${endTag}")
-        matcher.appendReplacement(sb, replacement)
+        String replacement = Matcher.quoteReplacement(matcher.group(1))
+        matcher.appendReplacement(sb, "${startTag}${replacement}${endTag}")
       }catch(Exception e){
         throw new Exception(e)
       }
@@ -222,17 +233,28 @@ class WikiToHtml{
   }
 
   private def splitText(String text) {
-    // replace all \n with newLn so we don't change the code block format.
-    def pattern = /\{noformat\}([\s\S]*?)\{noformat\}/
+    // Define the list of patterns to match {noformat} and {code:} blocks
+    def patterns = [
+      /\{noformat\}([\s\S]*?)\{noformat\}/,
+      /\{code:[^}]*\}([\s\S]*?)\{code\}/
+    ]
 
-    def modifiedText = text.replaceAll(pattern) { match ->
-      def codeBlock = match[1].replaceAll('\n', ' newLn ')
-      return "{noformat}${codeBlock}{noformat}"
+    def modifiedText = text
+
+    // Iterate over each pattern to find matches and replace newlines
+    patterns.each { pattern ->
+      modifiedText = modifiedText.replaceAll(pattern) { match ->
+        def codeBlock = match[1].replaceAll('\n', ' newLn ')
+        return match[0].replace(match[1], codeBlock) // Replace only the inner content
+      }
     }
-    modifiedText = modifiedText.split(System.lineSeparator())
-  }
+
+    // Split the final modified text by the system line separator
+    return modifiedText.split(System.lineSeparator())
+}
   
   public def wikiToHTML(String wiki){
+    if (!wiki) return null
     def splitted = splitText(wiki)
     String text = ""
     boolean check = true
