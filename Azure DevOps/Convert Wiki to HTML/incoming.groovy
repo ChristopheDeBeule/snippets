@@ -56,7 +56,7 @@ class WikiToHtml{
     if(!matches.find())
       return ""
 
-    return "<h${matches.group(1)}>${matches.group(2)}</h${matches.group(1)}><br>"
+    return "<h${matches.group(1)}>${processText(matches.group(2))}</h${matches.group(1)}><br>"
   }
 
   private def processUrl(String line, Boolean isList){
