@@ -1,3 +1,5 @@
+import groovy.json.JsonOutput
+
 // Get all fields
 def customFieldsFound = httpClient.get("/rest/api/3/issue/${issue.key}/editmeta")?.fields
 
