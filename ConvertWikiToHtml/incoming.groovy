@@ -149,6 +149,53 @@ class WikiToHtml{
     matcher.appendTail(sb)
     return sb.toString()
   }
+  private def calculateCellWidths(row) {
+    def totalLength = row.sum { it.length() }
+    row.collect { cell -> (cell.length() / totalLength) * 100 /1.4 }
+  }
+  private def isTable(String text) {
+    // Regex pattern to check if the text starts with a table structure
+    def tablePattern = /^(?:\|\|.*?\|\|$|\|.*?\|$)/
+    return text =~ tablePattern
+  }
+
+  private def processTable(String line) {
+    // Check if the line is a table; return if it's not
+    if (!isTable(line)) return ""
+
+    // Split the table text by `tbreak` to separate rows
+    def rows = line.split("tbreak")
+    def htmlTable = '''<table style="border-collapse: collapse; width: 100%;" border="1"><tbody>'''
+
+    rows.each { row ->
+      // Determine if the row is a header or data row based on starting symbols
+      def isHeader = row.startsWith("||")
+      def cellDelimiter = isHeader ? /\|\|/ : /\|/
+
+      // Remove leading and trailing delimiters, then split by delimiter
+      def cells = row.replaceAll(/^(\|\||\|)/, "").replaceAll(/(\|\||\|)$/, "").split(cellDelimiter)
+      
+      // Calculate dynamic cell widths based on content length
+      def widths = calculateCellWidths(cells)
+
+      // Start row
+      htmlTable += "<tr>"
+      
+      // Process each cell and add it to the HTML row
+      cells.eachWithIndex { cell, idx ->
+        def content = cell.trim() // Clean up cell content
+        htmlTable += isHeader
+          ? "<td style=\"width: ${widths[idx]}%;\"><strong>${processText(content)}</strong></td>" // Header cell
+          : "<td style=\"width: ${widths[idx]}%;\">${processText(content)}</td>"                  // Data cell
+      }
+
+      // End row
+      htmlTable += "</tr>"
+    }
+
+    htmlTable += "</tbody></table>"
+    return htmlTable
+  }
 
   private String processUserMention(String line){
     def regex = /\[~accountid:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\|([^\]]+)\]/
@@ -168,13 +215,40 @@ class WikiToHtml{
   }
 
   private def splitText(String text) {
-    def pattern = /\{noformat\}([\s\S]*?)\{noformat\}/
-
-    def modifiedText = text.replaceAll(pattern) { match ->
-      def codeBlock = match[1].replaceAll('\n', ' newLn ')
-      return "{noformat}${codeBlock}{noformat}"
+    // Code block handling section
+    def noformatPattern = /\{noformat\}([\s\S]*?)\{noformat\}/
+    def modifiedText = text.replaceAll(noformatPattern) { match ->
+        def codeBlock = match[1].replaceAll('\n', ' newLn ')
+        return "{noformat}${codeBlock}{noformat}"
     }
-    modifiedText = modifiedText.split(System.lineSeparator())
+    // End of code block handling
+
+    // Split the modified text by line
+    def lines = modifiedText.split(System.lineSeparator())
+    def modifiedLines = []
+    boolean inTable = false
+
+    // Table handling section
+    lines.each { line ->
+        if (line.startsWith("||")) {
+            // Start of a table: set inTable to true
+            if (!inTable) {
+                inTable = true
+            }
+            // Replace newline within table rows with tbreak
+            modifiedLines << line.replaceAll('\n', 'tbreak')
+        } else if (inTable && line.startsWith("|")) {
+            // Continuation of table row: append current line to the last table row
+            modifiedLines[-1] += 'tbreak' + line
+        } else {
+            // End of table: reset inTable to false
+            inTable = false
+            modifiedLines << line
+        }
+    }
+    // End of table handling
+
+    return modifiedLines
   }
   
   public def wikiToHTML(String wiki){
@@ -186,6 +260,7 @@ class WikiToHtml{
     String headerResult = ""
     String newUrl = ""
     String userMention = ""
+    String table = ""
 
     while(index < splitted.size()){
       def lineResult = processList(splitted, index)
@@ -208,11 +283,18 @@ class WikiToHtml{
           appender += processText(splitted[index])
       }
 
-      if(index != splitted.size())
-        userMention = processUserMention(splitted[index])
-      if (userMention){
-        appender = appender.replace(appender,userMention)
+      if(index != splitted.size()){
+        table = processTable(splitted[index])
       }
+      if(table){
+        appender = table
+      }
+
+      // if(index != splitted.size())
+      //   userMention = processUserMention(splitted[index])
+      // if (userMention){
+      //   appender = appender.replace(appender,userMention)
+      // }
 
       if (appender.isEmpty() && index != splitted.size())
         text += splitted[index] + "<br>" 
@@ -227,7 +309,6 @@ class WikiToHtml{
     return text
   }
 }
-
 // on the first sync its possible the user mention will not be set correctly
 // Therfore we need to create the new workItem first and set the description, comment or your string.
 
@@ -239,5 +320,6 @@ if(firstSync){
 }
 
 // Create a new WikiToHtml obect and call the wikiToHTML method.
-WikiToHtml convert = new WikiToHtml()
+// If you use the usermentions change the constructor with the project key and helper
+WikiToHtml convert = new WikiToHtml("","")
 def convertedString = convert.wikiToHTML(yourString)
