@@ -74,7 +74,7 @@ if (jiraLinkedIssues) {
 
 
 // Remove issueLinks if they are not longer linked in Jira
-def res = httpClient.get("/Christophe/_apis/wit/workitems/${workItem.key}?relations",true)
+def res = httpClient.get("/${workItem.projectKey}/_apis/wit/workitems/${workItem.key}?relations",true)
 def adoLinkedIssues = res?.relations
 List adoLinkedIssueKeys = []
 List jiraLinkedIssueKeys = []
