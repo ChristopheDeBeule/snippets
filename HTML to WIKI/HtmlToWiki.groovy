@@ -80,7 +80,7 @@ String convertHtmlElementToJiraWiki(Element element, String textPrefix = "") {
             jiraWiki.append(convertHtmlElementToJiraWiki(li, textPrefix + (tag == "ul" ? "*" : "#")));
         }
     } else if (tag == "li") {
-        jiraWiki.append("\n")append(textPrefix).append(" ").append(convertHtmlToJiraWiki(element, textPrefix));
+        jiraWiki.append("\n").append(textPrefix).append(" ").append(convertHtmlToJiraWiki(element, textPrefix));
     } else if (tag == "strong" || tag == "b") {
         jiraWiki.append("**").append(convertHtmlToJiraWiki(element)).append("**");
     } else {
