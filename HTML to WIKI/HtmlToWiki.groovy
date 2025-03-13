@@ -4,6 +4,7 @@
 import org.jsoup.*
 import org.jsoup.nodes.*
 import java.awt.Color
+import org.jsoup.nodes.Entities;
 
 
 String tmp = "<p><i>This is <b>a String word</b></i></p>"
@@ -44,7 +45,6 @@ String htmlText = """
   </li>
 </ol>
 """
-
 
 double colorDistance(Color c1, Color c2) {
   int rDiff = c1.red - c2.red
@@ -87,14 +87,18 @@ String hexToPlainText(String hex) {
 }
 
 String convertHtmlToJiraWiki(Element root, String textPrefix = "") {
-  StringBuilder jiraWiki = new StringBuilder();
-  for (Node node : root.childNodes()) {
-      if (node instanceof TextNode)
-          jiraWiki.append(node.toString().trim())
-      else if (node instanceof Element)
-          jiraWiki.append(convertHtmlElementToJiraWiki((Element)node, textPrefix))
-  }
-  return jiraWiki.toString();
+    StringBuilder jiraWiki = new StringBuilder();
+    for (Node node : root.childNodes()) {
+        if (node instanceof TextNode) {
+            String text = ((TextNode) node).text().trim();
+            text = Entities.unescape(text);  // Converts &nbsp;, &amp;, etc. to normal text
+            text = text.replace("\u00A0", " "); // Remove non-breaking spaces if any
+            jiraWiki.append(text);
+        } else if (node instanceof Element) {
+            jiraWiki.append(convertHtmlElementToJiraWiki((Element) node, textPrefix));
+        }
+    }
+    return jiraWiki.toString();
 }
 
 String convertHtmlElementToJiraWiki(Element element, String textPrefix = "") {
@@ -132,6 +136,8 @@ String convertHtmlElementToJiraWiki(Element element, String textPrefix = "") {
       jiraWiki.append("\n").append(textPrefix).append(" ").append(convertHtmlToJiraWiki(element, textPrefix));
   } else if (tag == "strong" || tag == "b") {
       jiraWiki.append(" *").append(convertHtmlToJiraWiki(element)).append("* ");
+  } else if (tag == "div") {
+    jiraWiki.append(convertHtmlToJiraWiki(element)).append("\n");
   } else {
       throw new Exception("Unknown tag detected: " + tag);
   }
