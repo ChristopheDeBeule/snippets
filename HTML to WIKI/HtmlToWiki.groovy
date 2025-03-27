@@ -115,7 +115,7 @@ String convertHtmlElementToJiraWiki(Element element, String textPrefix = "") {
       jiraWiki.append("_").append(convertHtmlToJiraWiki(element)).append("_");
   } else if (tag == "a") {
       jiraWiki.append("[").append(element.attr("href")).append("|").append(element.text()).append("]");
-  } else if(tag == "span" && element.attr("style") == "text-decoration: underline;"){
+  } else if((tag == "span" && element.attr("style") == "text-decoration: underline;") || (tag == "u")){
       jiraWiki.append("+").append(convertHtmlToJiraWiki(element)).append("+").append("\n");
   }else if(tag == "span" && element.attr("style").startsWith("color:")){
     String hexCode = element.attr("style").split(":")[1] //fetches the hexcode after color:
