@@ -1,0 +1,1 @@
+replica.parentId = issue.parentId
