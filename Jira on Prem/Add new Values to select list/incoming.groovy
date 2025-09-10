@@ -24,9 +24,10 @@ def addNewOptionToSelectList(String issueKey, String newOptionValue, String cust
     def options = optionsManager.getOptions(fieldConfig)
     List optionsValues = options ? options.value : []
     if(!optionsValues.isEmpty()){
-        if(!optionsValues.contains(newOptionValue)) optionsManager.createOption(fieldConfig, null, null, newOptionValue)
+        if(!optionsValues.contains(newOptionValue)) return optionsManager.createOption(fieldConfig, null, null, newOptionValue)
         return "Option '${newOptionValue}' Already exists in Field '${customFieldName}' with ID '${customFieldID}', with values<br>${optionsValues}"
     }
+    return
 }
 
 String testOptionAdded = "TestValueColor" // get this value from the remote side ex: replica.customFields."custom field name".value
