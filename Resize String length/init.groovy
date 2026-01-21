@@ -1,17 +1,21 @@
-def resizeString(String str, int lenght) {
-    if (str.size() <= lenght) return str
-    
-    // Extract the first 80 characters
-    def returnStr = str[0..lenght -1]
+String resizeString(String str, int length) {
+    // Ensure the length does not exceed the max allowed length
+    int maxLength = 32767 // Jira max allowed length
+    length = Math.min(length, maxLength)
+     println(length)
+    // Return string as is if it's already shorter than or equal to the desired length
+    if (str.size() <= length) return str
 
-    // Check if the 81st character (index 80) exists and is not a space
-    if (str.size() > lenght && str[lenght] != ' ') {
-        // Find the last space in the extracted string to avoid cutting off a word
+    // Extract the first 'length' characters
+    String returnStr = str[0..length - 1]
+
+    // If the string exceeds the length and the cut-off character is not a space
+    if (str[length] != ' ' && returnStr.lastIndexOf(' ') != -1) {
+        // Find the last space in the truncated string
         int lastSpaceIndex = returnStr.lastIndexOf(' ')
-        if (lastSpaceIndex != -1) {
-            // Truncate up to the last space index if space is found
-            returnStr = returnStr[0..lastSpaceIndex - 1]
-        }
+
+        // If space exists, truncate at the last space to avoid cutting off a word
+        returnStr = returnStr[0..lastSpaceIndex - 1]
     }
     return returnStr
 }
