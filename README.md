@@ -37,3 +37,4 @@ If you are interested feel free to book a meeting [here](https://exalate.com/boo
 * [Azure DevOps](https://github.com/ChristopheDeBeule/snippets/tree/main/Azure%20DevOps/ADO%20-%20Connect%20multiple%20issues%20to%20one%20workItem)
 * [Jira On Prem](https://github.com/ChristopheDeBeule/snippets/tree/main/Jira%20on%20Prem/Jira%20OnPrem%20-%20Many%20to%20one%20connection%20(connect%20multiple%20issues%20to%20one%20jira%20onPrem%20issue))
 * [Zendesk](https://github.com/ChristopheDeBeule/snippets/tree/main/Zendesk/Zendesk%20-%20Many%20to%20one)
+* [ServiceNow](https://github.com/ChristopheDeBeule/snippets/tree/main/ServiceNow/ServiceNow%20-%20Many%20to%20one%20Incident)
