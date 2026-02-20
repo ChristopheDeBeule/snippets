@@ -15,7 +15,9 @@ Out of the box we support:
 * [Salesforce](https://appexchange.salesforce.com/appxListingDetail?listingId=a0N4V00000GwHhcUAF)
 * [ServiceNow](https://docs.exalate.com/docs/configure-exalate-for-servicenow)
 * [Zendesk](https://www.zendesk.com/marketplace/apps/support/192636/exalate/)
-* [GitHub](https://github.com/marketplace/exalate-issue-sync) 
+* [GitHub](https://github.com/marketplace/exalate-issue-sync)
+* [Freshdesk](https://github.com/ChristopheDeBeule/snippets/tree/main/FreshDesk/)
+* [Freshservice](https://github.com/ChristopheDeBeule/snippets/tree/main/Freshservice/)
 
 If you are interested feel free to book a meeting [here](https://exalate.com/book-demo/).
 
@@ -38,3 +40,4 @@ If you are interested feel free to book a meeting [here](https://exalate.com/boo
 * [Jira On Prem](https://github.com/ChristopheDeBeule/snippets/tree/main/Jira%20on%20Prem/Jira%20OnPrem%20-%20Many%20to%20one%20connection%20(connect%20multiple%20issues%20to%20one%20jira%20onPrem%20issue))
 * [Zendesk](https://github.com/ChristopheDeBeule/snippets/tree/main/Zendesk/Zendesk%20-%20Many%20to%20one)
 * [ServiceNow](https://github.com/ChristopheDeBeule/snippets/tree/main/ServiceNow/ServiceNow%20-%20Many%20to%20one%20Incident)
+* [Salesforce](https://github.com/ChristopheDeBeule/snippets/blob/main/Salesforce/Many%20to%20one/incoming.groovy)
