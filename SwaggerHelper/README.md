@@ -10,6 +10,8 @@ This tool interacts with the Exalate REST API 4.0. You can explore all available
 
 - **Swagger URL:** `https://<your-node-url>/swagger`
 - **Authentication:** Requests are authenticated via the `X-exalate-jwt` header. The script handles this automatically using the token in your `.env` file.
+    - To get the `X-exalate-jwt` Follow these docs (Exalate internal use Only)
+    - [Get your token](https://exalate.atlassian.net/wiki/spaces/~62b96bf4c9f2df7b6089fc61/history/1560576084/API+request+on+Exalate+node+Swagger)
 
 ---
 
@@ -70,9 +72,9 @@ Use this to find your `CONNECTION_ID` or check node connectivity. No CSV file is
 
 To trigger syncs or update entities in bulk, you must provide a CSV dump (default: `Jira.csv`).
 
-1. **Prepare CSV:** Ensure `Jira.csv` has a column named `Issue id`
+1. **Prepare CSV:** Ensure `file.csv` has a column named `Issue id` OR `ID` (Depends on the CSV, `file.csv` is the name of your downloaded csv this depends on the platform you use,[Jira, Zendesk, ADO, ServiceNow, etc..])
 2. Set `REQUEST_METHOD = "POST"`
-3. Set `CONNECTION_ID = "154"`
+3. Set `CONNECTION_ID = "154"` (Found via the get request in the example above)
 4. Set `ENDPOINT_TEMPLATE = "/rest/issuehub/4.0/entity/{ticket_id}/connection/" + CONNECTION_ID + "/exalate"`
 5. Run: `python init.py`
 
