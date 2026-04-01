@@ -17,13 +17,55 @@ CSV-based processing is still fully supported for cases where you need to manual
 This tool interacts with the Exalate REST API 4.0. You can explore all available endpoints, required parameters, and response models via the Swagger UI on your specific node.
 
 - **Swagger URL:** `https://<your-node-url>/swagger`
-- **Authentication:** Requests are authenticated via the `X-exalate-jwt` header. The script handles this automatically using the token in your `.env` file.
-  - To get the `X-exalate-jwt`, follow these docs (Exalate internal use only):
-  - [Get your token](https://exalate.atlassian.net/wiki/spaces/~62b96bf4c9f2df7b6089fc61/history/1560576084/API+request+on+Exalate+node+Swagger)
+- **Authentication:** Requests are authenticated via the `X-exalate-jwt` header. The script handles this automatically - see Section 3.
 
 ---
 
-## 🛠 2. Installation (macOS Setup)
+## 🔐 2. Authentication & JWT Handling
+
+The script handles JWT authentication automatically. The behaviour depends on what is provided in your `.env` file:
+
+| Scenario | Behaviour |
+|---|---|
+| `EXALATE_JWT` present and not expired | Used directly - no network call needed |
+| `EXALATE_JWT` present but expired | Fresh token fetched via `ADO_PAT` |
+| `EXALATE_JWT` not in `.env` | Fresh token fetched via `ADO_PAT` |
+| Neither `EXALATE_JWT` nor `ADO_PAT` | Error - cannot authenticate |
+
+### How dynamic fetching works (ADO nodes only)
+
+When no valid static JWT is available, the script authenticates against the Exalate node using your Azure DevOps PAT via a POST to:
+
+```
+POST /rest/issuehub/4.0/authenticate
+
+{ "authProtocol": "basic", "password": "<ADO_PAT>", "user": "" }
+```
+
+The JWT is extracted from the response and used for all subsequent requests in that run. **Nothing is written back to your `.env` file** - the token lives only in memory for the duration of the script.
+
+> **Note:** Dynamic JWT fetching is currently supported on **Azure DevOps (azurenode)** instances only.
+> For all other node types (jcloudnode, zendesknode, snownode, etc.) provide `EXALATE_JWT` directly in your `.env`.
+
+### Example terminal output
+
+When `EXALATE_JWT` is present in `.env`:
+```
+[INFO] Token valid until: 2026-04-02 06:19:15 UTC
+✅ [AUTH] Using EXALATE_JWT from .env - still valid.
+```
+
+When `EXALATE_JWT` is not in `.env` (ADO node):
+```
+⚠️  [AUTH] No EXALATE_JWT in .env - fetching token via PAT...
+🔐 [AUTH] Authenticating via PAT...
+📡 [AUTH] Response status: 200
+✅ [AUTH] Successfully authenticated - JWT fetched via PAT.
+```
+
+---
+
+## 🛠 3. Installation (macOS Setup)
 
 macOS prevents installing Python packages globally to protect the system. You must use a Virtual Environment (`venv`) to install the required libraries.
 
@@ -53,15 +95,13 @@ pip install -r requirements.txt
 
 ---
 
-## 🐧 3. Installation (Linux Server Setup)
+## 🐧 4. Installation (Linux Server Setup)
 
 On most Linux servers Python 3 is already installed. You can verify with:
 
 ```bash
 python3 --version
 ```
-
-You have two options for installing dependencies:
 
 ### Option A: Virtual Environment (recommended, mirrors macOS setup)
 
@@ -79,13 +119,11 @@ When running via cron, reference the venv Python directly so the correct package
 
 ### Option B: System-wide pip install (simpler, no venv)
 
-If you prefer not to use a venv:
-
 ```bash
 pip install requests python-dotenv
 ```
 
-Then your cron job is simply:
+Cron job:
 
 ```bash
 0 18 * * * cd /path/to/project && python3 init.py >> /path/to/logs/cron.log 2>&1
@@ -95,15 +133,15 @@ Then your cron job is simply:
 
 **Option 1 - `.env` file** (same as macOS, no changes needed to the script):
 
-Create a `.env` file in the project root exactly as described in Section 4 below.
+Create a `.env` file in the project root exactly as described in Section 5 below.
 
 **Option 2 - System environment variables** (no `.env` file needed):
 
 Add your credentials to `~/.bashrc` or `~/.profile`:
 
 ```bash
-export EXALATE_JWT="your_jwt_token_here"
 export NODE_URL="https://your-node.exalate.cloud"
+export EXALATE_JWT="your_jwt_token_here"
 export ADO_ORG="your-ado-org-name"
 export ADO_PAT="your-ado-personal-access-token"
 export ADO_PROJECT="your-ado-project-name"
@@ -119,25 +157,43 @@ source ~/.bashrc
 
 ---
 
-## 🔐 4. Configuration (`.env`)
+## 🔧 5. Configuration (`.env`)
 
 Create a file named `.env` in the root folder. This file stores your private credentials.
 
-```plaintext
-EXALATE_JWT="your_jwt_token_here"
-NODE_URL="https://zendesknode-aaaa-bbbb-cccc-dddd.exalate.cloud"
+### ADO node - dynamic JWT fetch via PAT
 
-# Only required when using CRON mode (Azure DevOps auto-fetch)
+Use this when your node is an `azurenode`. No `EXALATE_JWT` needed - the script fetches it automatically using your `ADO_PAT`.
+
+```dotenv
+# Exalate
+NODE_URL="https://azurenode-xxxx-xxxx-xxxx-xxxx.exalate.cloud"
+# EXALATE_JWT is intentionally omitted - fetched dynamically via PAT below
+
+# ADO
 ADO_ORG="your-ado-org-name"
-ADO_PAT="your-ado-personal-access-token"
-ADO_PROJECT="your-ado-project-name"
+ADO_PAT="your-azure-devops-pat-here"
+ADO_PROJECT="your-project-name"
+
+# PAT used to authenticate against the Exalate node and fetch the JWT
+ADO_PAT="your-azure-devops-pat-here"
 ```
 
-> **ADO variables are optional.** If you are not using ADO, you can leave `ADO_ORG`, `ADO_PAT`, and `ADO_PROJECT` out of your `.env` entirely. The script only initializes the ADO client when `REQUEST_METHOD = "CRON"` is set - so GET, BATCH_CSV, and GET_CONNECTIONS modes will work without them.
+### All other node types - static JWT
+
+Use this for `jcloudnode`, `zendesknode`, `snownode`, and any non-ADO node. Provide `EXALATE_JWT` directly.
+
+```dotenv
+# Exalate
+NODE_URL="https://jcloudnode-xxxx-xxxx-xxxx-xxxx.exalate.cloud"
+EXALATE_JWT="your_hardcoded_jwt_here"
+```
+
+> **ADO variables** (`ADO_ORG`, `ADO_PAT`, `ADO_PROJECT`) are optional. They are only required when using `REQUEST_METHOD = "CRON"`. GET, BATCH_CSV, and GET_CONNECTIONS modes work without them.
 
 ---
 
-## 🚀 5. Usage Guide
+## 🚀 6. Usage Guide
 
 The script's behavior is controlled by `REQUEST_METHOD` at the top of `init.py`. There are four modes.
 
@@ -165,13 +221,13 @@ ID   | CONNECTION NAME          | STATUS      | CONNECTED TO
 
 **Valid CLI arguments:**
 
-| Command                  | Behaviour                        |
-|--------------------------|----------------------------------|
-| `python3 init.py`        | Runs normally (default mode)     |
-| `python3 init.py False`  | Runs normally (explicit)         |
-| `python3 init.py True`   | Prints connections table & exits |
-| `python3 init.py "True"` | ❌ Invalid - exits with error    |
-| `python3 init.py 1`      | ❌ Invalid - exits with error    |
+| Command | Behaviour |
+|---|---|
+| `python3 init.py` | Runs normally (default mode) |
+| `python3 init.py False` | Runs normally (explicit) |
+| `python3 init.py True` | Prints connections table & exits |
+| `python3 init.py "True"` | ❌ Invalid - exits with error |
+| `python3 init.py 1` | ❌ Invalid - exits with error |
 
 ---
 
@@ -206,8 +262,7 @@ Use this to trigger syncs in bulk from a CSV file (e.g. a Jira or Zendesk export
 1. **Prepare CSV:** Ensure your file has a column named `ID` (configurable via `COLUMN_NAME` in `init.py`)
 2. Set `REQUEST_METHOD = "BATCH_CSV"` in `init.py`
 3. Set `CONNECTION_ID = "154"`
-4. Set `ENDPOINT_TEMPLATE = "/rest/issuehub/4.0/entity/{ticket_id}/connection/" + CONNECTION_ID + "/exalate"`
-5. Run:
+4. Run:
 
 ```bash
 python3 init.py
@@ -229,7 +284,7 @@ python3 init.py
 
 ---
 
-## 📊 6. Results & Reporting
+## 📊 7. Results & Reporting
 
 ### Terminal Feedback
 
@@ -257,17 +312,17 @@ The script provides real-time output as it processes tickets:
 
 After every batch run, a timestamped report is generated for troubleshooting:
 
-| Ticket ID | Status  | HTTP Code | Error Reason               | Timestamp           |
-|-----------|---------|-----------|----------------------------|---------------------|
-| 101       | SUCCESS | 200       |                            | 2026-03-31 18:00:01 |
-| 102       | SUCCESS | 200       |                            | 2026-03-31 18:00:02 |
-| 103       | FAILED  | 404       | Issue '103' not found      | 2026-03-31 18:00:03 |
+| Ticket ID | Status | HTTP Code | Error Reason | Timestamp |
+|---|---|---|---|---|
+| 101 | SUCCESS | 200 | | 2026-03-31 18:00:01 |
+| 102 | SUCCESS | 200 | | 2026-03-31 18:00:02 |
+| 103 | FAILED | 404 | Issue '103' not found | 2026-03-31 18:00:03 |
 
 ---
 
-## 📂 7. Project Structure
+## 📂 8. Project Structure
 
-```plaintext
+```
 exalate-api-automation/
 ├── .env                            # Private credentials (ignored by Git)
 ├── .gitignore                      # Prevents pushing secrets to GitHub
@@ -278,16 +333,17 @@ exalate-api-automation/
 └── client/
     ├── __init__.py                 # Defines Python package
     ├── api_client.py               # ExalateClient - handles Exalate HTTP requests
-    └── ado_client.py               # ADOClient - handles Azure DevOps HTTP requests
+    ├── ado_client.py               # ADOClient - handles Azure DevOps HTTP requests
+    └── jwt_extractor.py            # Dynamic JWT fetching via ADO PAT
 ```
 
 ---
 
-## 🛡 8. GitHub Safety
+## 🛡 9. GitHub Safety
 
 Ensure your `.gitignore` is set up to prevent leaking sensitive data:
 
-```plaintext
+```
 venv/
 .env
 __pycache__/
