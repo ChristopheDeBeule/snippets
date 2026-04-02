@@ -2,7 +2,7 @@ import os
 import requests
 import sys
 from dotenv import load_dotenv
-from client.fetch_jwt import get_dynamic_jwt
+from client.fetch_jwt import get_dynamic_jwt, _is_jwt_expired
 
 load_dotenv()
 
@@ -20,8 +20,16 @@ class ExalateClient:
     def execute(self, method, path, data=None):
         allowed_methods = ["GET", "POST", "PUT"]
 
+        if self.token:
+            if _is_jwt_expired(self.token):
+                print("⚠️  [AUTH] EXALATE_JWT in .env has expired — Please provide a valid JWT...")
+                sys.exit(1)
+            print("✅ [AUTH] Using EXALATE_JWT from .env — still valid.")
+            
+            
         if not self.token:
             self.token = get_dynamic_jwt(self.node_url)
+            
         self.headers = {
             "Content-Type": "application/json",
             "X-exalate-jwt": self.token
