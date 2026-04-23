@@ -12,16 +12,17 @@ from client.ado_client import ADOClient
 
 # --- MODE ---
 # "GET"        → Single Exalate GET (debug/inspect)
-# "BATCH_CSV"  → Read IDs from tickets.csv and POST to Exalate (original flow)
+# "BATCH_CSV"  → Read IDs from tickets.csv and POST to Exalate
 # "CRON"       → Query ADO for today's work items, then POST each to Exalate
-REQUEST_METHOD = "CRON"
+#                Note: CRON mode requires ADO credentials (ADO_ORG + ADO_PAT)
+REQUEST_METHOD = "BATCH_CSV"
 
 # --- EXALATE ---
-CONNECTION_ID = "154"
+CONNECTION_ID = "296"
 ENDPOINT_TEMPLATE = "/rest/issuehub/4.0/entity/{ticket_id}/connection/" + CONNECTION_ID + "/exalate"
 
 # --- ADO (only required when REQUEST_METHOD = "CRON") ---
-ADO_PROJECT = os.getenv("ADO_PROJECT", "defaultProjectName")  # Also set in .env
+ADO_PROJECT = os.getenv("ADO_PROJECT", "defaultProjectName")
 
 # --- CSV (used only in BATCH_CSV mode) ---
 CSV_FILE = 'tickets.csv'
@@ -70,13 +71,11 @@ def get_connections(ex_client: ExalateClient):
     if res["success"]:
         connections = res["data"].get("results", [])
 
-        # Dynamically calculate column widths based on longest value in each column
         max_id_len      = max((len(str(conn.get("id", "")))     for conn in connections), default=2)
         max_name_len    = max((len(str(conn.get("name", "")))   for conn in connections), default=15)
         max_status_len  = max((len(str(conn.get("status", ""))) for conn in connections), default=6)
         max_remote_len  = max((len(parse_remote(conn))          for conn in connections), default=10)
 
-        # Never shorter than the header text itself
         max_id_len      = max(max_id_len,     len("ID"))
         max_name_len    = max(max_name_len,   len("CONNECTION NAME"))
         max_status_len  = max(max_status_len, len("STATUS"))
@@ -94,12 +93,36 @@ def get_connections(ex_client: ExalateClient):
 
 
 def parse_remote(conn: dict) -> str:
-    """Extract just the subdomain prefix from remoteUrl (e.g. 'jcloudnode' from 'https://jcloudnode-rnpx-...exalate.cloud')."""
+    """Extract just the subdomain prefix from remoteUrl."""
     remote_url = conn.get("communication", {}).get("remoteUrl", "")
     if not remote_url:
         return "N/A"
     subdomain = remote_url.replace("https://", "").replace("http://", "").split(".")[0]
     return subdomain.split("-")[0]
+
+
+def _init_ado_client() -> ADOClient | None:
+    """
+    Initialise ADOClient only when ADO credentials are present.
+    Returns None (with a clear message) if ADO_ORG or ADO_PAT are missing.
+    CRON mode is the only mode that requires this client.
+    """
+    ado_org = os.getenv("ADO_ORG")
+    ado_pat = os.getenv("ADO_PAT")
+
+    if not ado_org or not ado_pat:
+        print("❌ CRON mode requires ADO credentials.")
+        print("   Add the following to your .env file:")
+        print("     ADO_ORG=<your-ado-org>")
+        print("     ADO_PAT=<your-personal-access-token>")
+        print("     ADO_PROJECT=<your-project-name>")
+        return None
+
+    try:
+        return ADOClient()
+    except Exception as e:
+        print(f"❌ ADO Initialization Error: {e}")
+        return None
 
 
 def preflight_ado_check(ado_client: ADOClient, project: str) -> bool:
@@ -122,8 +145,7 @@ def preflight_ado_check(ado_client: ADOClient, project: str) -> bool:
 def fetch_todays_ado_ids(ado_client: ADOClient, project: str) -> list:
     """
     WIQL POST query to get all work items created today.
-    ADO returns { "workItems": [ { "id": int, "url": str }, ... ] }
-    We extract and return just the IDs as a list of strings.
+    Returns a list of ID strings.
     """
     print(f"🔍 Querying ADO for work items created today in project '{project}'...")
 
@@ -220,15 +242,6 @@ def main():
         print(f"❌ Initialization Error: {e}")
         return
 
-    # --- Only init ADO client when CRON mode is active ---
-    ado_client = None
-    if REQUEST_METHOD.upper() == "CRON":
-        try:
-            ado_client = ADOClient()
-        except Exception as e:
-            print(f"❌ ADO Initialization Error: {e}")
-            return
-
     # ── MODE: GET CONNECTIONS ──────────────────────────────────────────────────
     if GET_CONNECTIONS:
         get_connections(ex_client)
@@ -247,6 +260,11 @@ def main():
 
     # ── MODE: CRON ────────────────────────────────────────────────────────────
     if REQUEST_METHOD.upper() == "CRON":
+        # ADO client is only needed here — initialised dynamically based on env vars
+        ado_client = _init_ado_client()
+        if not ado_client:
+            return
+
         if not preflight_ado_check(ado_client, ADO_PROJECT):
             return
 
