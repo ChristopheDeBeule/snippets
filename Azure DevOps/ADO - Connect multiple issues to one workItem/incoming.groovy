@@ -1,16 +1,13 @@
 def remoteIssueUrn = replica.Demo__c // Salesforce customField (This can be any customField)
-// removes whitespaces in string when you have a remote key 
-if (remoteIssueUrn){
-  remoteIssueUrn = remoteIssueUrn.replaceAll("\\s","")
-}
 
 if(remoteIssueUrn && firstSync){
-  def localIssue = httpClient.get("/Christophe/_apis/wit/workitems/${remoteIssueUrn}",true).fields
-  if(localIssue == null) throw new com.exalate.api.exception.IssueTrackerException("Issue with key "+remoteIssueUrn+" was not found")
-  // set the id and Key of the workItem
-  issue.id = localIssue?."System.Id"
-  issue.key = localIssue?."System.Id"
-  return;
+  remoteIssueUrn = remoteIssueUrn.trim()
+  def localIssue = httpClient.get("/${projectName}/_apis/wit/workitems/${remoteIssueUrn}",true)?.fields
+  if(localIssue == null) throw new Exception("WorkItem Not Found.")
+  int systemId = localIssue?."System.Id" instanceof Double ? localIssue?."System.Id".toInteger() : localIssue?."System.Id"
+  issue.id  = systemId
+  issue.key = systemId
+  return 
 }
 // Only on the first sync (workItem creation) it will set the summary
 // If you set the summary out of the first sync it will be overwritten with the last issue that is connected
